@@ -882,7 +882,6 @@ void InitPlayer(int pnum, BOOL FirstTime)
 		}
 
 		plr[pnum]._pdir = DIR_S;
-		plr[pnum]._peflag = 0;
 
 		if (pnum == myplr) {
 			if (!FirstTime || currlevel != 0) {
@@ -955,62 +954,6 @@ void InitMultiView()
 
 	ViewX = plr[myplr].WorldX;
 	ViewY = plr[myplr].WorldY;
-}
-
-void CheckEFlag(int pnum, BOOL flag)
-{
-	int x, y, i;
-	int bitflags;
-	MICROS *pieces;
-
-	if ((DWORD)pnum >= MAX_PLRS) {
-		app_fatal("InitPlayer: illegal player %d", pnum);
-	}
-
-	x = plr[pnum].WorldX - 1;
-	y = plr[pnum].WorldY + 1;
-	bitflags = 0;
-	pieces = &dpiece_defs_map_2[x][y];
-
-	for (i = 2; i < 10; i++) {
-		bitflags |= pieces->mt[i];
-	}
-
-	if (bitflags | nSolidTable[dPiece[x][y]] | dSpecial[x][y]) {
-		plr[pnum]._peflag = 1;
-	} else {
-		plr[pnum]._peflag = 0;
-	}
-
-	if (flag != 1 || plr[pnum]._peflag != 1) {
-		return;
-	}
-
-	x = plr[pnum].WorldX;
-	y = plr[pnum].WorldY + 2;
-	bitflags = 0;
-	pieces = &dpiece_defs_map_2[x][y];
-
-	for (i = 2; i < 10; i++) {
-		bitflags |= pieces->mt[i];
-	}
-
-	if (bitflags | dSpecial[x][y]) {
-		return;
-	}
-
-	x = plr[pnum].WorldX - 2;
-	y = plr[pnum].WorldY + 1;
-	bitflags = 0;
-	pieces = &dpiece_defs_map_2[x][y];
-
-	for (i = 2; i < 10; i++) {
-		bitflags |= pieces->mt[i];
-	}
-
-	if (bitflags | dSpecial[x][y]) {
-		plr[pnum]._peflag = 2;
-	}
 }
 
 BOOL SolidLoc(int x, int y)
@@ -1100,7 +1043,6 @@ void FixPlayerLocation(int pnum, int bDir)
 	plr[pnum]._ptargy = plr[pnum].WorldY;
 	plr[pnum]._pxoff = 0;
 	plr[pnum]._pyoff = 0;
-	CheckEFlag(pnum, FALSE);
 	plr[pnum]._pdir = bDir;
 	if (pnum == myplr) {
 		ScrollInfo._sxoff = 0;
@@ -1144,8 +1086,6 @@ void StartWalkStand(int pnum)
 	plr[pnum]._py = plr[pnum].WorldY;
 	plr[pnum]._pxoff = 0;
 	plr[pnum]._pyoff = 0;
-
-	CheckEFlag(pnum, FALSE);
 
 	if (pnum == myplr) {
 		ScrollInfo._sxoff = 0;
@@ -1277,8 +1217,6 @@ void StartWalk(int pnum, int xvel, int yvel, int xadd, int yadd, int EndDir, int
 	plr[pnum]._pVar7 = 0;
 	plr[pnum]._pVar8 = 0;
 
-	CheckEFlag(pnum, FALSE);
-
 	if (pnum != myplr) {
 		return;
 	}
@@ -1355,12 +1293,6 @@ void StartWalk2(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int 
 	plr[pnum]._pdir = EndDir;
 	plr[pnum]._pVar8 = 0;
 
-	if (EndDir == DIR_SE) {
-		CheckEFlag(pnum, TRUE);
-	} else {
-		CheckEFlag(pnum, FALSE);
-	}
-
 	if (pnum != myplr) {
 		return;
 	}
@@ -1420,7 +1352,7 @@ void StartWalk3(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int 
 	plr[pnum]._pxoff = xoff;
 	plr[pnum]._pyoff = yoff;
 
-	if (leveltype) {
+	if (leveltype != DTYPE_TOWN) {
 		ChangeLightXY(plr[pnum]._plid, x, y);
 		PM_ChangeLightOff(pnum);
 	}
@@ -1441,8 +1373,6 @@ void StartWalk3(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int 
 
 	plr[pnum]._pdir = EndDir;
 	plr[pnum]._pVar8 = 0;
-
-	CheckEFlag(pnum, FALSE);
 
 	if (pnum != myplr) {
 		return;
@@ -3228,7 +3158,7 @@ void CheckNewPath(int pnum)
 				i = plr[pnum].destParam1;
 				x = abs(plr[pnum].WorldX - item[i]._ix);
 				y = abs(plr[pnum].WorldY - item[i]._iy);
-				if (x <= 1 && y <= 1 && pcurs == 1 && !item[i]._iRequest) {
+				if (x <= 1 && y <= 1 && pcurs == CURSOR_HAND && !item[i]._iRequest) {
 					NetSendCmdGItem(TRUE, CMD_REQUESTGITEM, myplr, myplr, i);
 					item[i]._iRequest = TRUE;
 				}
@@ -3239,7 +3169,7 @@ void CheckNewPath(int pnum)
 				i = plr[pnum].destParam1;
 				x = abs(plr[pnum].WorldX - item[i]._ix);
 				y = abs(plr[pnum].WorldY - item[i]._iy);
-				if (x <= 1 && y <= 1 && pcurs == 1) {
+				if (x <= 1 && y <= 1 && pcurs == CURSOR_HAND) {
 					NetSendCmdGItem(TRUE, CMD_REQUESTAGITEM, myplr, myplr, i);
 				}
 			}

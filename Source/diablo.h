@@ -6,7 +6,7 @@
 #ifndef __DIABLO_H__
 #define __DIABLO_H__
 
-extern HWND ghMainWnd;
+extern SDL_Window *ghMainWnd;
 extern int glMid1Seed[NUMLEVELS];
 extern int glMid2Seed[NUMLEVELS];
 extern int gnLevelTypeTbl[NUMLEVELS];
@@ -26,6 +26,9 @@ extern int DebugMonsters[10];
 extern BOOLEAN cineflag;
 extern int force_redraw;
 extern BOOL visiondebug;
+/* These are defined in fonts.h */ 
+extern BOOL was_fonts_init;
+extern void FontsCleanup();
 /** unused */
 extern BOOL scrollflag;
 extern BOOL light4flag;
@@ -48,6 +51,7 @@ int DiabloMain(int argc, char **argv);
 void diablo_parse_flags(int argc, char **argv);
 void diablo_init_screen();
 void diablo_reload_process(HINSTANCE hInstance);
+void diablo_quit(int exitStatus);
 BOOL PressEscKey();
 LRESULT DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

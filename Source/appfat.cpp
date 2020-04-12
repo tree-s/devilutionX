@@ -27,7 +27,7 @@ void app_fatal(const char *pszFmt, ...)
 
 	va_end(va);
 
-	exit(1);
+	diablo_quit(1);
 }
 
 void MsgBox(const char *pszFmt, va_list va)
@@ -85,7 +85,6 @@ void ErrDlg(const char *title, const char *error, char *log_file_path, int log_l
 	UiErrorOkDialog(title, text);
 	app_fatal(NULL);
 }
-
 
 void FileErrDlg(const char *error)
 {
