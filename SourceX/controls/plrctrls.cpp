@@ -176,7 +176,7 @@ bool HasRangedSpell()
 
 bool CanTargetMonster(int mi)
 {
-	const auto &monst = monster[mi];
+	const MonsterStruct &monst = monster[mi];
 
 	if (monst._mFlags & (MFLAG_HIDDEN | MFLAG_GOLEM))
 		return false;
@@ -200,7 +200,7 @@ void FindRangedTarget()
 
 	// The first MAX_PLRS monsters are reserved for players' golems.
 	for (int mi = MAX_PLRS; mi < MAXMONSTERS; mi++) {
-		const auto &monst = monster[mi];
+		const MonsterStruct &monst = monster[mi];
 		const int mx = monst._mfutx;
 		const int my = monst._mfuty;
 		if (!CanTargetMonster(mi))
@@ -847,6 +847,14 @@ void Movement()
 }
 
 struct RightStickAccumulator {
+
+	RightStickAccumulator()
+	{
+		lastTc = SDL_GetTicks();
+		hiresDX = 0;
+		hiresDY = 0;
+	}
+
 	void pool(int *x, int *y, int slowdown)
 	{
 		DWORD tc = SDL_GetTicks();
@@ -865,9 +873,9 @@ struct RightStickAccumulator {
 		lastTc = SDL_GetTicks();
 	}
 
-	DWORD lastTc = SDL_GetTicks();
-	int hiresDX = 0;
-	int hiresDY = 0;
+	DWORD lastTc;
+	int hiresDX;
+	int hiresDY;
 };
 
 } // namespace
@@ -947,8 +955,8 @@ void plrctrls_after_game_logic()
 void UseBeltItem(int type)
 {
 	for (int i = 0; i < MAXBELTITEMS; i++) {
-		const auto id = AllItemsList[plr[myplr].SpdList[i].IDidx].iMiscId;
-		const auto spellId = AllItemsList[plr[myplr].SpdList[i].IDidx].iSpell;
+		const int id = AllItemsList[plr[myplr].SpdList[i].IDidx].iMiscId;
+		const int spellId = AllItemsList[plr[myplr].SpdList[i].IDidx].iSpell;
 		if ((type == BLT_HEALING && (id == IMISC_HEAL || id == IMISC_FULLHEAL || (id == IMISC_SCROLL && spellId == SPL_HEAL)))
 		    || (type == BLT_MANA && (id == IMISC_MANA || id == IMISC_FULLMANA))
 		    || id == IMISC_REJUV || id == IMISC_FULLREJUV) {
@@ -1017,7 +1025,7 @@ void UpdateSpellTarget()
 	pcursplr = -1;
 	pcursmonst = -1;
 
-	const auto &player = plr[myplr];
+	const PlayerStruct &player = plr[myplr];
 
 	int range = 1;
 	if (plr[myplr]._pRSpell == SPL_TELEPORT)
