@@ -220,25 +220,25 @@ void UiFocusNavigation(SDL_Event *event)
 	}
 
 	switch (GetMenuAction(*event)) {
-	case MenuAction::SELECT:
+	case MenuAction_SELECT:
 		UiFocusNavigationSelect();
 		return;
-	case MenuAction::UP:
+	case MenuAction_UP:
 		UiFocus(SelectedItem - 1, UiItemsWraps);
 		return;
-	case MenuAction::DOWN:
+	case MenuAction_DOWN:
 		UiFocus(SelectedItem + 1, UiItemsWraps);
 		return;
-	case MenuAction::PAGE_UP:
+	case MenuAction_PAGE_UP:
 		UiFocusPageUp();
 		return;
-	case MenuAction::PAGE_DOWN:
+	case MenuAction_PAGE_DOWN:
 		UiFocusPageDown();
 		return;
-	case MenuAction::DELETE:
+	case MenuAction_DELETE:
 		UiFocusNavigationYesNo();
 		return;
-	case MenuAction::BACK:
+	case MenuAction_BACK:
 		if (!gfnListEsc)
 			break;
 		UiFocusNavigationEsc();
@@ -693,12 +693,12 @@ void Render(const UiScrollBar &ui_sb)
 	// Arrows:
 	{
 		const SDL_Rect rect = UpArrowRect(ui_sb);
-		const int frame = static_cast<int>(scrollBarState.upArrowPressed ? ScrollBarArrowFrame::UP_ACTIVE : ScrollBarArrowFrame::UP);
+		const int frame = static_cast<int>(scrollBarState.upArrowPressed ? ScrollBarArrowFrame_UP_ACTIVE : ScrollBarArrowFrame_UP);
 		DrawArt(rect.x, rect.y, ui_sb.arrow, frame, rect.w);
 	}
 	{
 		const SDL_Rect rect = DownArrowRect(ui_sb);
-		const int frame = static_cast<int>(scrollBarState.downArrowPressed ? ScrollBarArrowFrame::DOWN_ACTIVE : ScrollBarArrowFrame::DOWN);
+		const int frame = static_cast<int>(scrollBarState.downArrowPressed ? ScrollBarArrowFrame_DOWN_ACTIVE : ScrollBarArrowFrame_DOWN);
 		DrawArt(rect.x, rect.y, ui_sb.arrow, frame, rect.w);
 	}
 

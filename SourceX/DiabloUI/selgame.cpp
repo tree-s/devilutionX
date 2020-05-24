@@ -53,7 +53,7 @@ constexpr UiArtText SELUDPGAME_DESCRIPTION_LABEL = UiArtText("Description:", { P
 
 UiListItem SELUDPGAME_DIALOG_ITEMS[] = {
 	{ "Create Game", 0 },
-	{ "Enter IP", 1 },
+	{ "Join Game", 1 },
 };
 UiItem SELUDPGAME_DIALOG[] = {
 	MAINMENU_BACKGROUND,
@@ -73,7 +73,8 @@ UiItem ENTERIP_DIALOG[] = {
 	SELUDPGAME_TITLE,
 	SELUDPGAME_DESCRIPTION_LABEL,
 	SELGAME_DESCRIPTION,
-	UiArtText("Enter IP", { PANEL_LEFT + 305, 211, 285, 33 }, UIS_CENTER | UIS_BIG),
+	UiArtText("Enter address", { PANEL_LEFT + 305, 211, 285, 33 }, UIS_CENTER | UIS_BIG),
+
 	UiEdit(selgame_Ip, 128, { PANEL_LEFT + 305, 314, 285, 33 }, UIS_MED | UIS_GOLD),
 	SELGAME_OK,
 	SELGAME_CANCEL,
@@ -121,7 +122,7 @@ void selgame_GameSelection_Focus(int value)
 		strcpy(selgame_Description, "Create a new game with a difficulty setting of your choice.");
 		break;
 	case 1:
-		strcpy(selgame_Description, "Enter an IP and join a game already in progress at that address.");
+		strcpy(selgame_Description, "Enter an IP or a hostname and join a game already in progress at that address.");
 		break;
 	}
 	WordWrapArtStr(selgame_Description, SELGAME_DESCRIPTION.rect.w);
@@ -145,10 +146,11 @@ void selgame_GameSelection_Select(int value)
 	selgame_enteringGame = true;
 	selgame_selectedGame = value;
 
+	gfnHeroInfo(UpdateHeroLevel);
+
 	switch (value) {
 	case 0:
 		strcpy(title, "Create Game");
-		gfnHeroInfo(UpdateHeroLevel);
 		UiInitList(0, NUM_DIFFICULTIES - 1, selgame_Diff_Focus, selgame_Diff_Select, selgame_Diff_Esc, SELDIFF_DIALOG, size(SELDIFF_DIALOG));
 		break;
 	case 1:

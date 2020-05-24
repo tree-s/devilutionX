@@ -18,6 +18,7 @@
 namespace dvl {
 
 std::string basePath;
+std::string prefPath;
 
 DWORD nLastError = 0;
 bool directFileAccess = false;
@@ -36,7 +37,11 @@ static std::string getIniPath()
 	return result;
 }
 
-static radon::File ini(getIniPath());
+radon::File& getIni() {
+  static radon::File ini(getIniPath());
+  return ini;
+}
+
 static Mix_Chunk *SFileChunk;
 
 void GetBasePath(char *buffer, size_t size)
@@ -59,6 +64,11 @@ void GetBasePath(char *buffer, size_t size)
 
 void GetPrefPath(char *buffer, size_t size)
 {
+	if (prefPath.length()) {
+		snprintf(buffer, size, "%s", prefPath.c_str());
+		return;
+	}
+
 	char *path = SDL_GetPrefPath("diasurgical", "devilution");
 	if (path == NULL) {
 		buffer[0] = '\0';
@@ -341,7 +351,7 @@ bool getIniBool(const char *sectionName, const char *keyName, bool defaultValue)
 
 bool getIniValue(const char *sectionName, const char *keyName, char *string, int stringSize, int *dataSize)
 {
-	radon::Section *section = ini.getSection(sectionName);
+	radon::Section *section = getIni().getSection(sectionName);
 	if (!section)
 		return false;
 
@@ -361,6 +371,8 @@ bool getIniValue(const char *sectionName, const char *keyName, char *string, int
 
 void setIniValue(const char *sectionName, const char *keyName, char *value, int len)
 {
+	radon::File& ini = getIni();
+
 	radon::Section *section = ini.getSection(sectionName);
 	if (!section) {
 		ini.addSection(sectionName);
@@ -719,14 +731,14 @@ BOOL SVidPlayContinue(void)
 		} else {
 			factor = wFactor;
 		}
-		const int scaledW = SVidWidth * factor;
-		const int scaledH = SVidHeight * factor;
+		const Sint16 scaledW = SVidWidth * factor;
+		const Sint16 scaledH = SVidHeight * factor;
 
 		SDL_Rect pal_surface_offset = {
-			static_cast<decltype(SDL_Rect().x)>((output_surface->w - scaledW) / 2),
-			static_cast<decltype(SDL_Rect().y)>((output_surface->h - scaledH) / 2),
-			static_cast<decltype(SDL_Rect().w)>(scaledW),
-			static_cast<decltype(SDL_Rect().h)>(scaledH)
+			(output_surface->w - scaledW) / 2,
+			(output_surface->h - scaledH) / 2,
+			scaledW,
+			scaledH
 		};
 		if (factor == 1) {
 			if (SDL_BlitSurface(SVidSurface, NULL, output_surface, &pal_surface_offset) <= -1) {
