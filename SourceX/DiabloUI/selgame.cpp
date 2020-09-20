@@ -6,6 +6,7 @@
 #include "DiabloUI/text.h"
 #include "DiabloUI/dialogs.h"
 #include "DiabloUI/selok.h"
+#include "DiabloUI/selhero.h"
 
 namespace dvl {
 
@@ -166,7 +167,7 @@ void selgame_GameSelection_Select(int value)
 		SDL_Rect rect6 = { PANEL_LEFT + 449, 427, 140, 35 };
 		vecSelGameDialog.push_back(new UiArtTextButton("CANCEL", &UiFocusNavigationEsc, rect6, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD));
 
-		UiInitList(0, NUM_DIFFICULTIES - 1, selgame_Diff_Focus, selgame_Diff_Select, selgame_Diff_Esc, vecSelGameDialog);
+		UiInitList(0, NUM_DIFFICULTIES - 1, selgame_Diff_Focus, selgame_Diff_Select, selgame_Diff_Esc, vecSelGameDialog, true);
 		break;
 	}
 	case 1:
@@ -235,12 +236,17 @@ bool IsDifficultyAllowed(int value)
 
 void selgame_Diff_Select(int value)
 {
-	if (!IsDifficultyAllowed(value)) {
+	if (selhero_isMultiPlayer && !IsDifficultyAllowed(value)) {
 		selgame_GameSelection_Select(0);
 		return;
 	}
 
 	gbDifficulty = value;
+
+	if (!selhero_isMultiPlayer) {
+		selhero_endMenu = true;
+		return;
+	}
 
 	if (provider == SELCONN_LOOPBACK) {
 		selgame_Password_Select(0);
@@ -252,6 +258,14 @@ void selgame_Diff_Select(int value)
 
 void selgame_Diff_Esc()
 {
+	if (!selhero_isMultiPlayer) {
+		selgame_Free();
+
+		selhero_Init();
+		selhero_List_Init();
+		return;
+	}
+
 	if (provider == SELCONN_LOOPBACK) {
 		selgame_GameSelection_Esc();
 		return;
