@@ -352,7 +352,7 @@ const BYTE L3ISLE1[] = {
 
 	5, 14, // search
 	4,  9,
-	3, 12,
+	13, 12,
 
 	7, 7, // replace
 	7, 7,
@@ -384,8 +384,8 @@ const BYTE L3ISLE3[] = {
 	25, 28,
 	31, 32,
 	// clang-format on
-};/** Miniset: Replace small wall with lava 2. */
-
+};
+/** Miniset: Replace small wall with lava 2. */
 const BYTE L3ISLE4[] = {
 	// clang-format off
 	3, 2, // width, height
@@ -1081,7 +1081,7 @@ static BOOL DRLG_L3Spawn(int x, int y, int *totarea);
 static BOOL DRLG_L3SpawnEdge(int x, int y, int *totarea)
 {
 	BYTE i;
-	static BYTE spawntable[15] = { 0, 0x0A, 0x43, 0x05, 0x2C, 0x06, 0x09, 0, 0, 0x1C, 0x83, 0x06, 0x09, 0x0A, 0x05 };
+	static BYTE spawntable[15] = { 0x00, 0x0A, 0x43, 0x05, 0x2c, 0x06, 0x09, 0x00, 0x00, 0x1c, 0x83, 0x06, 0x09, 0x0A, 0x05 };
 
 	if (*totarea > 40) {
 		return TRUE;
@@ -1131,7 +1131,7 @@ static BOOL DRLG_L3SpawnEdge(int x, int y, int *totarea)
 static BOOL DRLG_L3Spawn(int x, int y, int *totarea)
 {
 	BYTE i;
-	static BYTE spawntable[15] = { 0, 0x0A, 0x03, 0x05, 0x0C, 0x06, 0x09, 0, 0, 0x012, 0x03, 0x06, 0x09, 0x0A, 0x05 };
+	static BYTE spawntable[15] = { 0x00, 0x0A, 0x03, 0x05, 0x0C, 0x06, 0x09, 0x00, 0x00, 0x0C, 0x03, 0x06, 0x09, 0x0A, 0x05 };
 
 	if (*totarea > 40) {
 		return TRUE;

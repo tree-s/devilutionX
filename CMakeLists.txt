@@ -301,11 +301,6 @@ set(devilutionx_SRCS
   Packaging/resources/CharisSILB.ttf
   Packaging/windows/devilutionx.rc)
 
-if(USE_SDL1)
-  list(APPEND devilutionx_SRCS
-    SourceS/sdl2_to_1_2_backports.cpp)
-endif()
-
 if(NOT NONET)
   list(APPEND devilutionx_SRCS
     SourceX/dvlnet/tcp_client.cpp
@@ -338,7 +333,8 @@ if(RUN_TESTS)
     SourceT/drlg_l3_test.cpp
     SourceT/drlg_l4_test.cpp
     SourceT/effects_test.cpp
-    SourceT/file_util_test.cpp)
+    SourceT/file_util_test.cpp
+    SourceT/scrollrt_test.cpp)
 endif()
 
 add_executable(${BIN_TARGET} WIN32 MACOSX_BUNDLE ${devilutionx_SRCS})
@@ -624,16 +620,8 @@ if(CPACK)
         "${PROJECT_SOURCE_DIR}/Packaging/nix/README.txt"
       DESTINATION "share/diasurgical/${project_name}"
     )
-    install(FILES "${PROJECT_SOURCE_DIR}/Packaging/resources/16.png"
-      DESTINATION "share/icons/hicolor/16x16/apps"
-      RENAME "${project_name}.png"
-    )
-    install(FILES "${PROJECT_SOURCE_DIR}/Packaging/resources/Diablo_32.png"
-      DESTINATION "share/icons/hicolor/32x32/apps"
-      RENAME "${project_name}.png"
-    )
-    install(FILES "${PROJECT_SOURCE_DIR}/Packaging/resources/Diablo_48.png"
-      DESTINATION "share/icons/hicolor/48x48/apps"
+    install(FILES "${PROJECT_SOURCE_DIR}/Packaging/resources/icon.png"
+      DESTINATION "share/icons/hicolor/512x512/apps"
       RENAME "${project_name}.png"
     )
     install(FILES "${PROJECT_SOURCE_DIR}/Packaging/resources/CharisSILB.ttf"
@@ -641,7 +629,7 @@ if(CPACK)
     )
 
     # -G DEB
-    set(CPACK_PACKAGE_CONTACT "kai@gnukai.com")
+    set(CPACK_PACKAGE_CONTACT "anders@jenbo.dk")
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
     set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 
