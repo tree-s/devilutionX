@@ -84,7 +84,7 @@ void multi_send_packet(void *packet, BYTE dwSize)
 	TPkt pkt;
 
 	NetRecvPlrData(&pkt);
-	pkt.hdr.wLen = dwSize + 19;
+	pkt.hdr.wLen = dwSize + sizeof(pkt.hdr);
 	memcpy(pkt.body, packet, dwSize);
 	if (!SNetSendMessage(myplr, &pkt.hdr, pkt.hdr.wLen))
 		nthread_terminate_game("SNetSendMessage0");
@@ -162,7 +162,7 @@ void multi_send_msg_packet(int pmask, BYTE *src, BYTE len)
 	TPkt pkt;
 
 	NetRecvPlrData(&pkt);
-	t = len + 19;
+	t = len + sizeof(pkt.hdr);
 	pkt.hdr.wLen = t;
 	memcpy(pkt.body, src, len);
 	for (v = 1, p = 0; p < MAX_PLRS; p++, v <<= 1) {
@@ -654,11 +654,11 @@ BOOL NetInit(BOOL bSinglePlayer, BOOL *pfExitProgram)
 #ifdef SPAWN
 		ProgramData.programname = "Diablo Shareware";
 #else
-		ProgramData.programname = "Diablo Retail";
+		ProgramData.programname = PROGRAM_NAME;
 #endif
 		ProgramData.programdescription = gszVersionNumber;
-		ProgramData.programid = 'DRTL';
-		ProgramData.versionid = 42;
+		ProgramData.programid = GAME_ID;
+		ProgramData.versionid = GAME_VERSION;
 		ProgramData.maxplayers = MAX_PLRS;
 		ProgramData.initdata = &sgGameInitInfo;
 		ProgramData.initdatabytes = sizeof(sgGameInitInfo);
@@ -716,7 +716,7 @@ BOOL NetInit(BOOL bSinglePlayer, BOOL *pfExitProgram)
 		multi_send_pinfo(-2, CMD_SEND_PLRINFO);
 		gbActivePlayers = 1;
 		plr[myplr].plractive = TRUE;
-		if (sgbPlayerTurnBitTbl[myplr] == 0 || msg_wait_resync())
+		if (sgbPlayerTurnBitTbl[myplr] == FALSE || msg_wait_resync())
 			break;
 		NetClose();
 		gbSelectProvider = FALSE;
@@ -755,15 +755,26 @@ void multi_send_pinfo(int pnum, char cmd)
 int InitLevelType(int l)
 {
 	if (l == 0)
-		return 0;
+		return DTYPE_TOWN;
 	if (l >= 1 && l <= 4)
-		return 1;
+		return DTYPE_CATHEDRAL;
 	if (l >= 5 && l <= 8)
-		return 2;
+		return DTYPE_CATACOMBS;
 	if (l >= 9 && l <= 12)
-		return 3;
+		return DTYPE_CAVES;
 
-	return 4;
+#ifdef HELLFIRE
+	if (l >= 13 && l <= 16)
+		return DTYPE_HELL;
+	if (l >= 21 && l <= 24)
+		return DTYPE_CATHEDRAL; // Crypt
+	if (l >= 17 && l <= 20)
+		return DTYPE_CAVES; // Hive
+
+	return DTYPE_CATHEDRAL;
+#else
+	return DTYPE_HELL;
+#endif
 }
 
 void SetupLocalCoords()
@@ -916,7 +927,7 @@ void recv_plrinfo(int pnum, TCmdPlrInfoHdr *p, BOOL recv)
 	plr[pnum].plractive = TRUE;
 	gbActivePlayers++;
 
-	if (sgbPlayerTurnBitTbl[pnum] != 0) {
+	if (sgbPlayerTurnBitTbl[pnum] != FALSE) {
 		szEvent = "Player '%s' (level %d) just joined the game";
 	} else {
 		szEvent = "Player '%s' (level %d) is already in the game";

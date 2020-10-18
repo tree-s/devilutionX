@@ -21,12 +21,16 @@ extern ItemStruct premiumitem[SMITH_PREMIUM_ITEMS];
 extern BYTE *pSTextBoxCels;
 extern int premiumlevel;
 extern int talker;
-extern STextStruct stext[24];
+extern STextStruct stext[STORE_LINES];
 extern char stextsize;
 extern int stextsmax;
 extern ItemStruct storehold[48];
 extern int gossipstart;
+#ifdef HELLFIRE
+extern ItemStruct witchitem[25];
+#else
 extern ItemStruct witchitem[20];
+#endif
 extern BOOL stextscrl;
 extern int numpremium;
 extern ItemStruct healitem[20];

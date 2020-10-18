@@ -115,11 +115,16 @@ void mainmenu_loop()
 			break;
 		case MAINMENU_REPLAY_INTRO:
 		case MAINMENU_ATTRACT_MODE:
+#ifdef HELLFIRE
+			if (gbActive)
+				mainmenu_play_intro();
+#else
 #ifdef SPAWN
 			done = FALSE;
 #else
 			if (gbActive)
 				mainmenu_play_intro();
+#endif
 #endif
 			break;
 		case MAINMENU_SHOW_CREDITS:
@@ -168,13 +173,15 @@ BOOL mainmenu_multi_player()
 	return mainmenu_init_menu(SELHERO_CONNECT);
 }
 
-#ifndef SPAWN
 void mainmenu_play_intro()
 {
 	music_stop();
+#ifdef HELLFIRE
+	play_movie("gendata\\Hellfire.smk", TRUE);
+#else
 	play_movie("gendata\\diablo1.smk", TRUE);
+#endif
 	mainmenu_refresh_music();
 }
-#endif
 
 DEVILUTION_END_NAMESPACE

@@ -15,6 +15,7 @@ option(NIGHTLY_BUILD "Enable options for nightly build" OFF)
 option(USE_SDL1 "Use SDL1.2 instead of SDL2" OFF)
 option(NONET "Disable network" OFF)
 option(RUN_TESTS "Build and run tests" OFF)
+option(HELLFIRE "Build hellfire version" OFF)
 RELEASE_OPTION(CPACK "Configure CPack")
 
 
@@ -92,7 +93,7 @@ elseif(TARGET_PLATFORM STREQUAL "cpigamesh")
   include(cpigamesh_defs)
 endif()
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD OR ${CMAKE_SYSTEM_NAME} STREQUAL OpenBSD)
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|OpenBSD|DragonFly")
   set(ASAN OFF)
   set(UBSAN OFF)
   add_definitions(-D_BSD_SOURCE)
@@ -337,6 +338,10 @@ if(RUN_TESTS)
     SourceT/scrollrt_test.cpp)
 endif()
 
+if(HELLFIRE)
+  add_definitions(-DHELLFIRE)
+endif()
+
 add_executable(${BIN_TARGET} WIN32 MACOSX_BUNDLE ${devilutionx_SRCS})
 
 # Copy the font to the build directory to it works from the build directory
@@ -571,6 +576,7 @@ if(APPLE)
   set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION})
   set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION})
   set(MACOSX_BUNDLE_LONG_VERSION_STRING "Version ${PROJECT_VERSION}")
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12.0")
   set_target_properties(${BIN_TARGET} PROPERTIES MACOSX_BUNDLE_ICON_FILE "AppIcon")
   set_target_properties(${BIN_TARGET} PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/macOS/Info.plist")
 
