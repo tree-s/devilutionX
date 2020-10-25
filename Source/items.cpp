@@ -1051,7 +1051,6 @@ void CalcPlrItemVals(int p, BOOL Loadgfx)
 		g++;
 	}
 
-#ifndef SPAWN
 #ifdef HELLFIRE
 	if (plr[p].InvBody[INVLOC_CHEST]._itype == ITYPE_HARMOR && plr[p].InvBody[INVLOC_CHEST]._iStatFlag) {
 		if (plr[p]._pClass == PC_MONK && plr[p].InvBody[INVLOC_CHEST]._iMagical == ITEM_QUALITY_UNIQUE)
@@ -1075,7 +1074,6 @@ void CalcPlrItemVals(int p, BOOL Loadgfx)
 	if (plr[p].InvBody[INVLOC_CHEST]._itype == ITYPE_HARMOR && plr[p].InvBody[INVLOC_CHEST]._iStatFlag) {
 		g += ANIM_ID_HEAVY_ARMOR;
 	}
-#endif
 #endif
 
 	if (plr[p]._pgfxnum != g && Loadgfx) {
@@ -1435,7 +1433,6 @@ void CreatePlrItems(int p)
 		SetPlrHandItem(&plr[p].SpdList[1], IDI_HEAL);
 		GetPlrHandSeed(&plr[p].SpdList[1]);
 		break;
-#ifndef SPAWN
 	case PC_ROGUE:
 		SetPlrHandItem(&plr[p].InvBody[INVLOC_HAND_LEFT], IDI_ROGUE);
 		GetPlrHandSeed(&plr[p].InvBody[INVLOC_HAND_LEFT]);
@@ -1464,7 +1461,6 @@ void CreatePlrItems(int p)
 		GetPlrHandSeed(&plr[p].SpdList[1]);
 #endif
 		break;
-#endif
 
 #ifdef HELLFIRE
 	case PC_MONK:
@@ -1688,16 +1684,17 @@ void GetBookSpell(int i, int lvl)
 	if (lvl == 0)
 		lvl = 1;
 	rv = random_(14, MAX_SPELLS) + 1;
-#ifdef SPAWN
-	if (lvl > 5)
+
+	if (gbIsSpawn && lvl > 5)
 		lvl = 5;
-#endif
+
 	s = SPL_FIREBOLT;
 #ifdef HELLFIRE
 	bs = SPL_FIREBOLT;
 #endif
 	while (rv > 0) {
-		if (spelldata[s].sBookLvl != -1 && lvl >= spelldata[s].sBookLvl) {
+		int sLevel = GetSpellBookLevel(s);
+		if (sLevel != -1 && lvl >= sLevel) {
 			rv--;
 			bs = s;
 		}
@@ -1805,13 +1802,14 @@ void GetStaffSpell(int i, int lvl, BOOL onlygood)
 		if (l == 0)
 			l = 1;
 		rv = random_(18, MAX_SPELLS) + 1;
-#ifdef SPAWN
-		if (lvl > 10)
+
+		if (gbIsSpawn && lvl > 10)
 			lvl = 10;
-#endif
+
 		s = SPL_FIREBOLT;
 		while (rv > 0) {
-			if (spelldata[s].sStaffLvl != -1 && l >= spelldata[s].sStaffLvl) {
+			int sLevel = GetSpellStaffLevel(s);
+			if (sLevel != -1 && l >= sLevel) {
 				rv--;
 				bs = s;
 			}
@@ -3208,9 +3206,9 @@ void items_427A72()
 	if (CornerStone.activated) {
 		if (CornerStone.item.IDidx >= 0) {
 			PackItem(&id, &CornerStone.item);
-			setIniValue("Hellfire", off_4A5AC4, (BYTE *)&id, 19);
+			setIniValue("Hellfire", off_4A5AC4, (char *)&id, 19);
 		} else {
-			setIniValue("Hellfire", off_4A5AC4, (BYTE *)"", 1);
+			setIniValue("Hellfire", off_4A5AC4, (char *)"", 1);
 		}
 	}
 }
@@ -3218,7 +3216,7 @@ void items_427A72()
 void items_427ABA(int x, int y)
 {
 	int i, ii;
-	DWORD dwSize;
+	int dwSize;
 	PkItemStruct PkSItem;
 
 	if (CornerStone.activated || x == 0 || y == 0) {
@@ -3238,7 +3236,7 @@ void items_427ABA(int x, int y)
 		dItem[x][y] = 0;
 	}
 	dwSize = 0;
-	if (getIniValue("Hellfire", off_4A5AC4, (BYTE *)&PkSItem, sizeof(PkSItem), &dwSize)) {
+	if (getIniValue("Hellfire", off_4A5AC4, (char *)&PkSItem, sizeof(PkSItem), &dwSize)) {
 		if (dwSize == sizeof(PkSItem)) {
 			ii = itemavail[0];
 			dItem[x][y] = ii + 1;
@@ -3584,7 +3582,7 @@ void DoRecharge(int pnum, int cii)
 		pi = &p->InvBody[cii];
 	}
 	if (pi->_itype == ITYPE_STAFF && pi->_iSpell) {
-		r = spelldata[pi->_iSpell].sBookLvl;
+		r = GetSpellBookLevel(pi->_iSpell);
 		r = random_(38, p->_pLevel / r) + 1;
 		RechargeItem(pi, r);
 		CalcPlrInv(pnum, TRUE);
@@ -5488,7 +5486,7 @@ void CreateSpellBook(int x, int y, int ispell, BOOL sendmsg, BOOL delta)
 
 	done = FALSE;
 #ifdef HELLFIRE
-	int lvl = spelldata[ispell].sBookLvl + 1;
+	int lvl = GetSpellBookLevel(ispell) + 1;
 	if (lvl < 1) {
 		return;
 	}

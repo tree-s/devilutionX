@@ -438,7 +438,7 @@ void multi_process_network_packets()
 			plr[dwID]._pBaseStr = pkt->bstr;
 			plr[dwID]._pBaseMag = pkt->bmag;
 			plr[dwID]._pBaseDex = pkt->bdex;
-			if (!cond && plr[dwID].plractive && plr[dwID]._pHitPoints) {
+			if (!cond && plr[dwID].plractive && plr[dwID]._pHitPoints != 0) {
 				if (currlevel == plr[dwID].plrlevel && !plr[dwID]._pLvlChanging) {
 					dx = abs(plr[dwID]._px - pkt->px);
 					dy = abs(plr[dwID]._py - pkt->py);
@@ -651,11 +651,11 @@ BOOL NetInit(BOOL bSinglePlayer, BOOL *pfExitProgram)
 		sgGameInitInfo.bRate = ticks_per_sec;
 		memset(&ProgramData, 0, sizeof(ProgramData));
 		ProgramData.size = sizeof(ProgramData);
-#ifdef SPAWN
-		ProgramData.programname = "Diablo Shareware";
-#else
+
 		ProgramData.programname = PROGRAM_NAME;
-#endif
+		if (gbIsSpawn)
+			ProgramData.programname = "Diablo Shareware";
+
 		ProgramData.programdescription = gszVersionNumber;
 		ProgramData.programid = GAME_ID;
 		ProgramData.versionid = GAME_VERSION;
