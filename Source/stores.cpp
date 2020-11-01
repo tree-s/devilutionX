@@ -37,8 +37,6 @@ int stextsel;
 char stextscrldbtn;
 int gossipend;
 BYTE *pSPentSpn2Cels;
-BYTE PentSpn2Frame;
-DWORD PentSpn2Tick;
 int stextsval;
 int boylevel;
 ItemStruct smithitem[SMITH_ITEMS];
@@ -47,7 +45,7 @@ char stextscrlubtn;
 char stextflag;
 
 /** Maps from towner IDs to NPC names. */
-char *talkname[9] = {
+const char *const talkname[9] = {
 	"Griswold",
 	"Pepin",
 	"",
@@ -68,7 +66,6 @@ void InitStores()
 	pSTextSlidCels = LoadFileInMem("Data\\TextSlid.CEL", NULL);
 	ClearSText(0, STORE_LINES);
 	stextflag = STORE_NONE;
-	PentSpn2Frame = 1;
 	stextsize = FALSE;
 	stextscrl = FALSE;
 	numpremium = 0;
@@ -81,13 +78,9 @@ void InitStores()
 	boylevel = 0;
 }
 
-void PentSpn2Spin()
+int PentSpn2Spin()
 {
-	DWORD ticks = SDL_GetTicks();
-	if (ticks - PentSpn2Tick > 50) {
-		PentSpn2Frame = (PentSpn2Frame & 7) + 1;
-		PentSpn2Tick = ticks;
-	}
+	return (SDL_GetTicks() / 50) % 8 + 1;
 }
 
 void SetupTownStores()
@@ -134,7 +127,7 @@ void DrawSTextBack()
 	trans_rect(PANEL_LEFT + 347, UI_OFFSET_Y + 28, 265, 297);
 }
 
-void PrintSString(int x, int y, BOOL cjustflag, char *str, char col, int val)
+void PrintSString(int x, int y, BOOL cjustflag, const char *str, char col, int val)
 {
 	int xx, yy;
 	int len, width, sx, sy, i, k, s;
@@ -163,7 +156,7 @@ void PrintSString(int x, int y, BOOL cjustflag, char *str, char col, int val)
 		sx += k;
 	}
 	if (stextsel == y) {
-		CelDraw(cjustflag ? xx + x + k - 20 : xx + x - 20, s + 45 + SCREEN_Y + UI_OFFSET_Y, pSPentSpn2Cels, PentSpn2Frame, 12);
+		CelDraw(cjustflag ? xx + x + k - 20 : xx + x - 20, s + 45 + SCREEN_Y + UI_OFFSET_Y, pSPentSpn2Cels, PentSpn2Spin(), 12);
 	}
 	for (i = 0; i < len; i++) {
 		c = fontframe[gbFontTransTbl[(BYTE)str[i]]];
@@ -185,7 +178,7 @@ void PrintSString(int x, int y, BOOL cjustflag, char *str, char col, int val)
 		}
 	}
 	if (stextsel == y) {
-		CelDraw(cjustflag ? (xx + x + k + 4) : (PANEL_X + 596 - x), s + 45 + SCREEN_Y + UI_OFFSET_Y, pSPentSpn2Cels, PentSpn2Frame, 12);
+		CelDraw(cjustflag ? (xx + x + k + 4) : (PANEL_X + 596 - x), s + 45 + SCREEN_Y + UI_OFFSET_Y, pSPentSpn2Cels, PentSpn2Spin(), 12);
 	}
 }
 
@@ -287,7 +280,7 @@ void OffsetSTextY(int y, int yo)
 	stext[y]._syoff = yo;
 }
 
-void AddSText(int x, int y, BOOL j, char *str, char clr, BOOL sel)
+void AddSText(int x, int y, BOOL j, const char *str, char clr, BOOL sel)
 {
 	stext[y]._sx = x;
 	stext[y]._syoff = 0;
@@ -1627,8 +1620,6 @@ void DrawSText()
 
 	if (stextscrl)
 		DrawSSlider(4, 20);
-
-	PentSpn2Spin();
 }
 
 void STextESC()

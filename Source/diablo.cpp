@@ -4,6 +4,7 @@
  * Implementation of the main game initialization functions.
  */
 #include "all.h"
+#include "paths.h"
 #include "../3rdParty/Storm/Source/storm.h"
 #include "../DiabloUI/diabloui.h"
 #include <config.h>
@@ -89,14 +90,14 @@ int framestart;
 /** Specifies whether players are in non-PvP mode. */
 BOOL FriendlyMode = TRUE;
 /** Default quick messages */
-char *spszMsgTbl[4] = {
+const char *const spszMsgTbl[4] = {
 	"I need help! Come Here!",
 	"Follow me.",
 	"Here's something for you.",
 	"Now you DIE!"
 };
 /** INI files variable names for quick message keys */
-char *spszMsgHotKeyTbl[4] = { "F9", "F10", "F11", "F12" };
+const char *const spszMsgHotKeyTbl[4] = { "F9", "F10", "F11", "F12" };
 
 /** To know if these things have been done when we get to the diablo_deinit() function */
 BOOL was_archives_init = false;
@@ -429,23 +430,9 @@ void diablo_parse_flags(int argc, char **argv)
 			printf("%s v%s\n", PROJECT_NAME, PROJECT_VERSION);
 			diablo_quit(0);
 		} else if (strcasecmp("--data-dir", argv[i]) == 0) {
-			basePath = argv[++i];
-#ifdef _WIN32
-			if (basePath.back() != '\\')
-				basePath += '\\';
-#else
-			if (basePath.back() != '/')
-				basePath += '/';
-#endif
+			SetBasePath(argv[++i]);
 		} else if (strcasecmp("--save-dir", argv[i]) == 0) {
-			prefPath = argv[++i];
-#ifdef _WIN32
-			if (prefPath.back() != '\\')
-				prefPath += '\\';
-#else
-			if (prefPath.back() != '/')
-				prefPath += '/';
-#endif
+			SetPrefPath(argv[++i]);
 		} else if (strcasecmp("-n", argv[i]) == 0) {
 			showintrodebug = FALSE;
 		} else if (strcasecmp("-f", argv[i]) == 0) {
@@ -577,7 +564,7 @@ static void GetMousePos(LPARAM lParam)
 	MouseY = (short)((lParam >> 16) & 0xffff);
 }
 
-LRESULT DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+void DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg) {
 	case DVL_WM_KEYDOWN:
@@ -587,71 +574,71 @@ LRESULT DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case DVL_WM_SYSCOMMAND:
 	case DVL_WM_MOUSEMOVE:
 		GetMousePos(lParam);
-		return 0;
+		return;
 	case DVL_WM_LBUTTONDOWN:
 		if (sgbMouseDown != 0)
-			return 0;
+			return;
 		sgbMouseDown = 1;
-		return 0;
+		return;
 	case DVL_WM_LBUTTONUP:
 		if (sgbMouseDown != 1)
-			return 0;
+			return;
 		sgbMouseDown = 0;
-		return 0;
+		return;
 	case DVL_WM_RBUTTONDOWN:
 		if (sgbMouseDown != 0)
-			return 0;
+			return;
 		sgbMouseDown = 2;
-		return 0;
+		return;
 	case DVL_WM_RBUTTONUP:
 		if (sgbMouseDown != 2)
-			return 0;
+			return;
 		sgbMouseDown = 0;
-		return 0;
+		return;
 	case DVL_WM_CAPTURECHANGED:
 		if (hWnd == (HWND)lParam)
-			return 0;
+			return;
 		sgbMouseDown = 0;
-		return 0;
+		return;
 	}
 
-	return MainWndProc(hWnd, uMsg, wParam, lParam);
+	MainWndProc(hWnd, uMsg, wParam, lParam);
 }
 
-LRESULT GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+void GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg) {
 	case DVL_WM_KEYDOWN:
 		PressKey(wParam);
-		return 0;
+		return;
 	case DVL_WM_KEYUP:
 		ReleaseKey(wParam);
-		return 0;
+		return;
 	case DVL_WM_CHAR:
 		PressChar(wParam);
-		return 0;
+		return;
 	case DVL_WM_SYSKEYDOWN:
 		if (PressSysKey(wParam))
-			return 0;
+			return;
 		break;
 	case DVL_WM_SYSCOMMAND:
 		if (wParam == DVL_SC_CLOSE) {
 			gbRunGame = FALSE;
 			gbRunGameResult = FALSE;
-			return 0;
+			return;
 		}
 		break;
 	case DVL_WM_MOUSEMOVE:
 		GetMousePos(lParam);
 		gmenu_on_mouse_move();
-		return 0;
+		return;
 	case DVL_WM_LBUTTONDOWN:
 		GetMousePos(lParam);
 		if (sgbMouseDown == 0) {
 			sgbMouseDown = 1;
 			track_repeat_walk(LeftMouseDown(wParam));
 		}
-		return 0;
+		return;
 	case DVL_WM_LBUTTONUP:
 		GetMousePos(lParam);
 		if (sgbMouseDown == 1) {
@@ -659,20 +646,20 @@ LRESULT GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			LeftMouseUp();
 			track_repeat_walk(FALSE);
 		}
-		return 0;
+		return;
 	case DVL_WM_RBUTTONDOWN:
 		GetMousePos(lParam);
 		if (sgbMouseDown == 0) {
 			sgbMouseDown = 2;
 			RightMouseDown();
 		}
-		return 0;
+		return;
 	case DVL_WM_RBUTTONUP:
 		GetMousePos(lParam);
 		if (sgbMouseDown == 2) {
 			sgbMouseDown = 0;
 		}
-		return 0;
+		return;
 	case DVL_WM_CAPTURECHANGED:
 		if (hWnd != (HWND)lParam) {
 			sgbMouseDown = 0;
@@ -702,10 +689,10 @@ LRESULT GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			PaletteFadeIn(8);
 		nthread_ignore_mutex(FALSE);
 		gbGameLoopStartup = TRUE;
-		return 0;
+		return;
 	}
 
-	return MainWndProc(hWnd, uMsg, wParam, lParam);
+	MainWndProc(hWnd, uMsg, wParam, lParam);
 }
 
 BOOL LeftMouseDown(int wParam)
@@ -1824,7 +1811,7 @@ void game_loop(BOOL bStartup)
 {
 	int i;
 
-	i = bStartup ? 60 : 3;
+	i = bStartup ? ticks_per_sec * 3 : 3;
 
 	while (i--) {
 		if (!multi_handle_delta()) {

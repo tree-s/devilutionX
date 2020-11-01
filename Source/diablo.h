@@ -76,8 +76,8 @@ void diablo_init_screen();
 void diablo_reload_process(HINSTANCE hInstance);
 void diablo_quit(int exitStatus);
 BOOL PressEscKey();
-LRESULT DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-LRESULT GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL LeftMouseDown(int wParam);
 BOOL LeftMouseCmd(BOOL bShift);
 BOOL TryIconCurs();
@@ -123,8 +123,8 @@ extern int frameend;
 extern int framerate;
 extern int framestart;
 extern BOOL FriendlyMode;
-extern char *spszMsgTbl[4];
-extern char *spszMsgHotKeyTbl[4];
+extern const char *const spszMsgTbl[4];
+extern const char *const spszMsgHotKeyTbl[4];
 
 #ifdef __cplusplus
 }

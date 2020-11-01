@@ -42,7 +42,6 @@ extern int stextsel;
 extern char stextscrldbtn;
 extern int gossipend;
 extern BYTE *pSPentSpn2Cels;
-extern BYTE PentSpn2Frame;
 extern int stextsval;
 extern int boylevel;
 extern ItemStruct smithitem[SMITH_ITEMS];
@@ -51,11 +50,11 @@ extern char stextscrlubtn;
 extern char stextflag;
 
 void InitStores();
-void PentSpn2Spin();
+int PentSpn2Spin();
 void SetupTownStores();
 void FreeStoreMem();
 void DrawSTextBack();
-void PrintSString(int x, int y, BOOL cjustflag, char *str, char col, int val);
+void PrintSString(int x, int y, BOOL cjustflag, const char *str, char col, int val);
 void DrawSLine(int y);
 void DrawSSlider(int y1, int y2);
 void DrawSTextHelp();
@@ -63,7 +62,7 @@ void ClearSText(int s, int e);
 void AddSLine(int y);
 void AddSTextVal(int y, int val);
 void OffsetSTextY(int y, int yo);
-void AddSText(int x, int y, BOOL j, char *str, char clr, BOOL sel);
+void AddSText(int x, int y, BOOL j, const char *str, char clr, BOOL sel);
 void StoreAutoPlace();
 void S_StartSmith();
 void S_ScrollSBuy(int idx);
@@ -149,7 +148,7 @@ void ReleaseStoreBtn();
 
 /* rdata */
 
-extern char *talkname[9];
+extern const char *const talkname[9];
 #ifdef __cplusplus
 }
 #endif
