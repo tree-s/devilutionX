@@ -198,7 +198,6 @@ const char *const StoryBookName[] = {
 	"The Realms Beyond",
 	"Tale of the Three",
 	"The Black King",
-#ifdef HELLFIRE
 	"Journal: The Ensorcellment",
 	"Journal: The Meeting",
 	"Journal: The Tirade",
@@ -206,7 +205,6 @@ const char *const StoryBookName[] = {
 	"Journal: NA-KRUL",
 	"Journal: The End",
 	"A Spellbook",
-#endif
 };
 /** Specifies the speech IDs of each dungeon type narrator book, for each player class. */
 int StoryText[3][3] = {
@@ -223,22 +221,15 @@ void InitObjectGFX()
 
 	memset(fileload, FALSE, sizeof(fileload));
 
-#ifdef HELLFIRE
 	int lvl = currlevel;
 	if (currlevel >= 21 && currlevel <= 24)
 		lvl -= 20;
 	else if (currlevel >= 17 && currlevel <= 20)
 		lvl -= 8;
-#endif
 	for (i = 0; AllObjects[i].oload != -1; i++) {
 		if (AllObjects[i].oload == 1
-#ifdef HELLFIRE
 		    && (int)lvl >= AllObjects[i].ominlvl
 		    && (int)lvl <= AllObjects[i].omaxlvl) {
-#else
-		    && (int)currlevel >= AllObjects[i].ominlvl
-		    && (int)currlevel <= AllObjects[i].omaxlvl) {
-#endif
 			fileload[AllObjects[i].ofindex] = TRUE;
 		}
 		if (AllObjects[i].otheme != THEME_NONE) {
@@ -258,12 +249,10 @@ void InitObjectGFX()
 		if (fileload[i]) {
 			ObjFileList[numobjfiles] = i;
 			sprintf(filestr, "Objects\\%s.CEL", ObjMasterLoadList[i]);
-#ifdef HELLFIRE
 			if (currlevel >= 17 && currlevel < 21)
 				sprintf(filestr, "Objects\\%s.CEL", ObjHiveLoadList[i]);
 			else if (currlevel >= 21)
 				sprintf(filestr, "Objects\\%s.CEL", ObjCryptLoadList[i]);
-#endif
 			pObjCels[numobjfiles] = LoadFileInMem(filestr, NULL);
 			numobjfiles++;
 		}
@@ -567,7 +556,6 @@ void AddL1Objs(int x1, int y1, int x2, int y2)
 	}
 }
 
-#ifdef HELLFIRE
 void add_crypt_objs(int x1, int y1, int x2, int y2)
 {
 	int i, j, pn;
@@ -583,7 +571,6 @@ void add_crypt_objs(int x1, int y1, int x2, int y2)
 	}
 }
 
-#endif
 void AddL2Objs(int x1, int y1, int x2, int y2)
 {
 	int i, j, pn;
@@ -730,14 +717,15 @@ void AddChestTraps()
 
 void LoadMapObjects(BYTE *pMap, int startx, int starty, int x1, int y1, int w, int h, int leveridx)
 {
-	int rw, rh, i, j, oi;
+	int rw, rh, i, j, oi, type;
 	BYTE *lm;
 	long mapoff;
 
 	InitObjFlag = TRUE;
 
-	lm = pMap + 2;
-	rw = pMap[0];
+	lm = pMap;
+	rw = lm[0];
+	lm += 2;
 	rh = *lm;
 	mapoff = (rw * rh + 1) * 2;
 	rw <<= 1;
@@ -748,7 +736,8 @@ void LoadMapObjects(BYTE *pMap, int startx, int starty, int x1, int y1, int w, i
 	for (j = 0; j < rh; j++) {
 		for (i = 0; i < rw; i++) {
 			if (*lm) {
-				AddObject(ObjTypeConv[*lm], startx + 16 + i, starty + 16 + j);
+				type = lm[0];
+				AddObject(ObjTypeConv[type], startx + 16 + i, starty + 16 + j);
 				oi = ObjIndex(startx + 16 + i, starty + 16 + j);
 				SetObjMapRange(oi, x1, y1, x1 + w, y1 + h, leveridx);
 			}
@@ -1429,11 +1418,7 @@ void AddShrine(int i)
 {
 	int val;
 	DIABOOL slist[NUM_SHRINETYPE];
-#ifdef HELLFIRE
-	unsigned int j;
-#else
 	int j;
-#endif
 	object[i]._oPreFlag = TRUE;
 	for (j = 0; j < NUM_SHRINETYPE; j++) {
 		if (currlevel < shrinemin[j] || currlevel > shrinemax[j]) {
@@ -1566,17 +1551,9 @@ void AddStoryBook(int i)
 	object[i]._oVar1 = random_(0, 3);
 	if (currlevel == 4)
 		object[i]._oVar2 = StoryText[object[i]._oVar1][0];
-#ifdef HELLFIRE
-	if (currlevel == 8)
-#else
 	else if (currlevel == 8)
-#endif
 		object[i]._oVar2 = StoryText[object[i]._oVar1][1];
-#ifdef HELLFIRE
-	if (currlevel == 12)
-#else
 	else if (currlevel == 12)
-#endif
 		object[i]._oVar2 = StoryText[object[i]._oVar1][2];
 	object[i]._oVar3 = (currlevel >> 2) + 3 * object[i]._oVar1 - 1;
 	object[i]._oAnimFrame = 5 - 2 * object[i]._oVar1;
@@ -2057,8 +2034,10 @@ void Obj_FlameTrap(int i)
 		y = object[i]._oy;
 		if (dMonster[x][y] > 0)
 			MonsterTrapHit(dMonster[x][y] - 1, mindam / 2, maxdam / 2, 0, MIS_FIREWALLC, FALSE);
-		if (dPlayer[x][y] > 0)
-			PlayerMHit(dPlayer[x][y] - 1, -1, 0, mindam, maxdam, MIS_FIREWALLC, FALSE, 0);
+		if (dPlayer[x][y] > 0) {
+			BOOLEAN unused;
+			PlayerMHit(dPlayer[x][y] - 1, -1, 0, mindam, maxdam, MIS_FIREWALLC, FALSE, 0, &unused);
+		}
 
 		if (object[i]._oAnimFrame == object[i]._oAnimLen)
 			object[i]._oAnimFrame = 11;
@@ -2986,14 +2965,12 @@ void OperateLever(int pnum, int i)
 				}
 			}
 		}
-#ifdef HELLFIRE
 		if (currlevel == 24) {
 			operate_lv24_lever();
 			IsUberLeverActivated = 1;
 			mapflag = FALSE;
 			quests[Q_NAKRUL]._qactive = 3;
 		}
-#endif
 		if (mapflag)
 			ObjChangeMap(object[i]._oVar1, object[i]._oVar2, object[i]._oVar3, object[i]._oVar4);
 		if (pnum == myplr)
@@ -4931,8 +4908,9 @@ void BreakBarrel(int pnum, int i, int dam, BOOL forcebreak, BOOL sendmsg)
 			for (xp = object[i]._ox - 1; xp <= object[i]._ox + 1; xp++) {
 				if (dMonster[xp][yp] > 0)
 					MonsterTrapHit(dMonster[xp][yp] - 1, 1, 4, 0, MIS_FIREBOLT, FALSE);
+				BOOLEAN unused;
 				if (dPlayer[xp][yp] > 0)
-					PlayerMHit(dPlayer[xp][yp] - 1, -1, 0, 8, 16, MIS_FIREBOLT, FALSE, 0);
+					PlayerMHit(dPlayer[xp][yp] - 1, -1, 0, 8, 16, MIS_FIREBOLT, FALSE, 0, &unused);
 				if (dObject[xp][yp] > 0) {
 					oi = dObject[xp][yp] - 1;
 					if (object[oi]._otype == OBJ_BARRELEX && object[oi]._oBreak != -1)
@@ -5230,13 +5208,11 @@ void GetObjectStr(int i)
 		break;
 	case OBJ_BARREL:
 	case OBJ_BARRELEX:
-#ifdef HELLFIRE
 		if (currlevel > 16 && currlevel < 21)      // for hive levels
 			strcpy(infostr, "Pod");                //Then a barrel is called a pod
 		else if (currlevel > 20 && currlevel < 25) // for crypt levels
 			strcpy(infostr, "Urn");                //Then a barrel is called an urn
 		else
-#endif
 			strcpy(infostr, "Barrel");
 		break;
 	case OBJ_SKELBOOK:

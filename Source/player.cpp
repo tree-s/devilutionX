@@ -1450,7 +1450,8 @@ void StartWalk(int pnum, int xvel, int yvel, int xadd, int yadd, int EndDir, int
 #if defined(__clang__) || defined(__GNUC__)
 __attribute__((no_sanitize("shift-base")))
 #endif
-void StartWalk2(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int yadd, int EndDir, int sdir)
+void
+StartWalk2(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int yadd, int EndDir, int sdir)
 {
 	int px, py;
 
@@ -1526,7 +1527,8 @@ void StartWalk2(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int 
 #if defined(__clang__) || defined(__GNUC__)
 __attribute__((no_sanitize("shift-base")))
 #endif
-void StartWalk3(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int yadd, int mapx, int mapy, int EndDir, int sdir)
+void
+StartWalk3(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int yadd, int mapx, int mapy, int EndDir, int sdir)
 {
 	int px, py, x, y;
 
@@ -1868,7 +1870,8 @@ static void PlrDeadItem(int pnum, ItemStruct *itm, int xx, int yy)
 #if defined(__clang__) || defined(__GNUC__)
 __attribute__((no_sanitize("shift-base")))
 #endif
-void StartPlayerKill(int pnum, int earflag)
+void
+StartPlayerKill(int pnum, int earflag)
 {
 	BOOL diablolevel;
 	int i, pdd;
@@ -2113,7 +2116,6 @@ void DropHalfPlayersGold(int pnum)
 	plr[pnum]._pGold = CalculateGold(pnum);
 }
 
-#ifdef HELLFIRE
 void StripTopGold(int pnum)
 {
 	ItemStruct tmpItem;
@@ -2143,16 +2145,11 @@ void StripTopGold(int pnum)
 	plr[pnum].HoldItem = tmpItem;
 }
 
-#endif
 void SyncPlrKill(int pnum, int earflag)
 {
 	int ma, i;
 
-#ifdef HELLFIRE
 	if (plr[pnum]._pHitPoints <= 0 && currlevel == 0) {
-#else
-	if (plr[pnum]._pHitPoints == 0 && currlevel == 0) {
-#endif
 		SetPlayerHitPoints(pnum, 64);
 		return;
 	}
@@ -2231,7 +2228,8 @@ void InitLevelChange(int pnum)
 #if defined(__clang__) || defined(__GNUC__)
 __attribute__((no_sanitize("shift-base")))
 #endif
-void StartNewLvl(int pnum, int fom, int lvl)
+void
+StartNewLvl(int pnum, int fom, int lvl)
 {
 	InitLevelChange(pnum);
 
@@ -3964,7 +3962,7 @@ void MakePlrPath(int pnum, int xx, int yy, BOOL endspace)
 
 void CheckPlrSpell()
 {
-	BOOL addflag;
+	BOOL addflag = FALSE;
 	int rspell, sd, sl;
 
 	if ((DWORD)myplr >= MAX_PLRS) {
@@ -3979,6 +3977,14 @@ void CheckPlrSpell()
 			PlaySFX(PS_ROGUE34);
 		} else if (plr[myplr]._pClass == PC_SORCERER) {
 			PlaySFX(PS_MAGE34);
+#ifdef HELLFIRE
+		} else if (plr[myplr]._pClass == PC_MONK) {
+			PlaySFX(PS_MONK34);
+		} else if (plr[myplr]._pClass == PC_BARD) {
+			PlaySFX(PS_ROGUE34);
+		} else if (plr[myplr]._pClass == PC_BARBARIAN) {
+			PlaySFX(PS_WARR34);
+#endif
 		}
 		return;
 	}
@@ -3990,25 +3996,38 @@ void CheckPlrSpell()
 			PlaySFX(PS_ROGUE27);
 		} else if (plr[myplr]._pClass == PC_SORCERER) {
 			PlaySFX(PS_MAGE27);
+#ifdef HELLFIRE
+		} else if (plr[myplr]._pClass == PC_MONK) {
+			PlaySFX(PS_MONK27);
+		} else if (plr[myplr]._pClass == PC_BARD) {
+			PlaySFX(PS_ROGUE27);
+		} else if (plr[myplr]._pClass == PC_BARBARIAN) {
+			PlaySFX(PS_WARR27);
+#endif
 		}
 		return;
 	}
 
 	if (!sgbControllerActive) {
-		if (pcurs != CURSOR_HAND
-		    || (MouseY >= PANEL_TOP && MouseX >= PANEL_LEFT && MouseX <= RIGHT_PANEL)     // inside main panel
-		    || ((chrflag || questlog) && MouseX < SPANEL_WIDTH && MouseY < SPANEL_HEIGHT) // inside left panel
-		    || ((invflag || sbookflag) && MouseX > RIGHT_PANEL && MouseY < SPANEL_HEIGHT) // inside right panel
-		        && rspell != SPL_HEAL
-		        && rspell != SPL_IDENTIFY
-		        && rspell != SPL_REPAIR
-		        && rspell != SPL_INFRA
-		        && rspell != SPL_RECHARGE) {
+		if (pcurs != CURSOR_HAND)
 			return;
+
+		if (MouseY >= PANEL_TOP && MouseX >= PANEL_LEFT && MouseX <= RIGHT_PANEL) // inside main panel
+			return;
+
+		if (
+		    ((chrflag || questlog) && MouseX < SPANEL_WIDTH && MouseY < SPANEL_HEIGHT)    // inside left panel
+		    || ((invflag || sbookflag) && MouseX > RIGHT_PANEL && MouseY < SPANEL_HEIGHT) // inside right panel
+		) {
+			if (rspell != SPL_HEAL
+			    && rspell != SPL_IDENTIFY
+			    && rspell != SPL_REPAIR
+			    && rspell != SPL_INFRA
+			    && rspell != SPL_RECHARGE)
+				return;
 		}
 	}
 
-	addflag = FALSE;
 	switch (plr[myplr]._pRSplType) {
 	case RSPLTYPE_SKILL:
 	case RSPLTYPE_SPELL:
@@ -4023,7 +4042,11 @@ void CheckPlrSpell()
 	}
 
 	if (addflag) {
-		if (plr[myplr]._pRSpell == SPL_FIREWALL) {
+		if (plr[myplr]._pRSpell == SPL_FIREWALL
+#ifdef HELLFIRE
+		    || plr[myplr]._pRSpell == SPL_LIGHTWALL
+#endif
+		) {
 			sd = GetDirection(plr[myplr]._px, plr[myplr]._py, cursmx, cursmy);
 			sl = GetSpellLevel(myplr, plr[myplr]._pRSpell);
 			NetSendCmdLocParam3(TRUE, CMD_SPELLXYD, cursmx, cursmy, plr[myplr]._pRSpell, sd, sl);
@@ -4047,6 +4070,14 @@ void CheckPlrSpell()
 			PlaySFX(PS_ROGUE35);
 		} else if (plr[myplr]._pClass == PC_SORCERER) {
 			PlaySFX(PS_MAGE35);
+#ifdef HELLFIRE
+		} else if (plr[myplr]._pClass == PC_MONK) {
+			PlaySFX(PS_MONK35);
+		} else if (plr[myplr]._pClass == PC_BARD) {
+			PlaySFX(PS_ROGUE35);
+		} else if (plr[myplr]._pClass == PC_BARBARIAN) {
+			PlaySFX(PS_WARR35);
+#endif
 		}
 	}
 }
@@ -4610,21 +4641,19 @@ void PlayDungMsgs()
 	}
 }
 
-#ifdef HELLFIRE
-int player_45EFA1(int i)
+int get_max_strength(int i)
 {
 	return MaxStats[i][ATTRIB_STR];
 }
 
-int player_45EFAB(int i)
+int get_max_magic(int i)
 {
 	return MaxStats[i][ATTRIB_MAG];
 }
 
-int player_45EFB5(int i)
+int get_max_dexterity(int i)
 {
 	return MaxStats[i][ATTRIB_DEX];
 }
-#endif
 
 DEVILUTION_END_NAMESPACE

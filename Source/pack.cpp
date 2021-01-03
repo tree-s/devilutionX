@@ -70,12 +70,10 @@ void PackPlayer(PkPlayerStruct *pPack, int pnum, BOOL manashield)
 	pPack->pMaxManaBase = SwapLE32(pPlayer->_pMaxManaBase);
 	pPack->pMemSpells = SDL_SwapLE64(pPlayer->_pMemSpells);
 
-	for (i = 0; i < 37; i++) // Should be MAX_SPELLS but set to 37 to make save games compatible
+	for (i = 0; i <= 36; i++) // Should be MAX_SPELLS-1 but set to 36 to make save games compatible	
 		pPack->pSplLvl[i] = pPlayer->_pSplLvl[i];
-#ifdef HELLFIRE
 	for (i = 37; i < 47; i++)
 		pPack->pSplLvl2[i - 37] = pPlayer->_pSplLvl[i];
-#endif
 
 	pki = &pPack->InvBody[0];
 	pi = &pPlayer->InvBody[0];
@@ -129,11 +127,7 @@ void PackPlayer(PkPlayerStruct *pPack, int pnum, BOOL manashield)
  * @param is The source packed item
  * @param id The distination item
  */
-#ifndef HELLFIRE
-static
-#endif
-    void
-    UnPackItem(PkItemStruct *is, ItemStruct *id)
+void UnPackItem(PkItemStruct *is, ItemStruct *id)
 {
 	WORD idx = SwapLE16(is->idx);
 
@@ -227,16 +221,10 @@ void UnPackPlayer(PkPlayerStruct *pPack, int pnum, BOOL killok)
 	pPlayer->_pManaBase = SwapLE32(pPack->pManaBase);
 	pPlayer->_pMemSpells = SDL_SwapLE64(pPack->pMemSpells);
 
-#ifdef HELLFIRE
 	for (i = 0; i <= 36; i++) // Should be MAX_SPELLS-1 but set to 36 to make save games compatible
 		pPlayer->_pSplLvl[i] = pPack->pSplLvl[i];
-	char *p = pPack->pSplLvl2;
 	for (i = 37; i < 47; i++)
-		pPlayer->_pSplLvl[i] = p[i - 37];
-#else
-	for (i = 0; i < MAX_SPELLS; i++)
-		pPlayer->_pSplLvl[i] = pPack->pSplLvl[i];
-#endif
+		pPlayer->_pSplLvl[i] = pPack->pSplLvl2[i - 37];
 
 	pki = &pPack->InvBody[0];
 	pi = &pPlayer->InvBody[0];

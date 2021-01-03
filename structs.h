@@ -171,9 +171,7 @@ typedef struct ItemStruct {
 	BOOL _iStatFlag;
 	int IDidx;
 	int offs016C; // _oldlight or _iInvalid
-#ifdef HELLFIRE
 	int _iDamAcFlags;
-#endif
 } ItemStruct;
 
 //////////////////////////////////////////////////
@@ -536,13 +534,8 @@ typedef struct CMonster {
 	TSnd *Snds[4][2];
 	int width;
 	int width2;
-#ifdef HELLFIRE
-	int mMinHP;
-	int mMaxHP;
-#else
 	unsigned char mMinHP;
 	unsigned char mMaxHP;
-#endif
 	BOOL has_special;
 	unsigned char mAFNum;
 	char mdeadval;
@@ -868,13 +861,11 @@ typedef struct TCmdDamage {
 	DWORD dwDam;
 } TCmdDamage;
 
-#ifdef HELLFIRE
 typedef struct TCmdMonDamage {
 	BYTE bCmd;
 	WORD wMon;
 	DWORD dwDam;
 } TCmdMonDamage;
-#endif
 
 typedef struct TCmdPlrInfoHdr {
 	BYTE bCmd;
@@ -1050,14 +1041,12 @@ typedef struct QuestData {
 	const char *_qlstr;
 } QuestData;
 
-#ifdef HELLFIRE
 typedef struct CornerStoneStruct {
 	int x;
 	int y;
 	BOOL activated;
 	ItemStruct item;
 } CornerStoneStruct;
-#endif
 
 //////////////////////////////////////////////////
 // gamemenu/gmenu

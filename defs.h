@@ -6,17 +6,9 @@
 
 #ifdef HELLFIRE
 #define DIABOOL					BOOLEAN
-#define GAME_NAME				"HELLFIRE"
-#define APP_NAME				"Hellfire"
-#else
-#define DIABOOL					BOOL
-#define GAME_NAME				"DIABLO"
-#define APP_NAME				"Diablo"
-#endif
-
-#ifdef HELLFIRE
 #define HFAND &&
 #else
+#define DIABOOL					BOOL
 #define HFAND &
 #endif
 
@@ -59,6 +51,7 @@
 #define MAXMONSTERS				200
 #define MAXOBJECTS				127
 #define MAXPORTAL				4
+
 #ifdef HELLFIRE
 #define MAXQUESTS				24
 #define MAXMULTIQUESTS			10
@@ -66,13 +59,16 @@
 #define MAXQUESTS				16
 #define MAXMULTIQUESTS			4
 #endif
+
 #define MAXTHEMES				50
 #define MAXTILES				2048
+
 #ifdef HELLFIRE
 #define MAXTRIGGERS				7
 #else
 #define MAXTRIGGERS				5
 #endif
+
 #define MAXVISION				32
 #define MDMAXX					40
 #define MDMAXY					40
@@ -98,7 +94,9 @@
 // todo: enums
 #ifdef HELLFIRE
 #define NUMLEVELS				25
+#define BOY_MAX_VALUE			200000
 #define WITCH_ITEMS				25
+#define WITCH_MAX_VALUE			200000
 #define SMITH_ITEMS				25
 #define SMITH_PREMIUM_ITEMS		15
 #define SMITH_MAX_VALUE			200000
@@ -106,7 +104,9 @@
 #define STORE_LINES				104
 #else
 #define NUMLEVELS				17
+#define BOY_MAX_VALUE			90000
 #define WITCH_ITEMS				20
+#define WITCH_MAX_VALUE			140000
 #define SMITH_ITEMS				20
 #define SMITH_PREMIUM_ITEMS		6
 #define SMITH_MAX_VALUE			140000

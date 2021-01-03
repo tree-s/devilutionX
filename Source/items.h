@@ -17,27 +17,21 @@ extern BOOL uitemflag;
 extern int itemavail[MAXITEMS];
 extern ItemGetRecordStruct itemrecord[MAXITEMS];
 extern ItemStruct item[MAXITEMS + 1];
-#ifdef HELLFIRE
 extern CornerStoneStruct CornerStone;
-#endif
 extern BOOL UniqueItemFlag[128];
-#ifdef HELLFIRE
 extern int auricGold;
-#endif
 extern int numitems;
 
-#ifdef HELLFIRE
-int items_4231CA(int i);
-int items_423230(int i);
-int items_423296(int i);
-int items_4232FC(int i);
-int items_423362(int i);
-int items_4233C8(int i);
-int items_42342E(int i);
-int items_4234B2(int i);
-int items_423518(int i);
-int items_42357E(int i);
-#endif
+int get_ring_max_value(int i);
+int get_bow_max_value(int i);
+int get_staff_max_value(int i);
+int get_sword_max_value(int i);
+int get_helm_max_value(int i);
+int get_shield_max_value(int i);
+int get_armor_max_value(int i);
+int get_mace_max_value(int i);
+int get_amulet_max_value(int i);
+int get_axe_max_value(int i);
 void InitItemGFX();
 void InitItems();
 void CalcPlrItemVals(int p, BOOL Loadgfx);
@@ -64,18 +58,14 @@ void CreateRndUseful(int pnum, int x, int y, BOOL sendmsg);
 void CreateTypeItem(int x, int y, BOOL onlygood, int itype, int imisc, BOOL sendmsg, BOOL delta);
 void RecreateItem(int ii, int idx, WORD icreateinfo, int iseed, int ivalue);
 void RecreateEar(int ii, WORD ic, int iseed, int Id, int dur, int mdur, int ch, int mch, int ivalue, int ibuff);
-#ifdef HELLFIRE
 void items_427A72();
 void items_427ABA(int x, int y);
-#endif
 void SpawnQuestItem(int itemid, int x, int y, int randarea, int selflag);
 void SpawnRock();
-#ifdef HELLFIRE
 void SpawnRewardItem(int itemid, int xx, int yy);
 void SpawnMapOfDoom(int xx, int yy);
 void SpawnRuneBomb(int xx, int yy);
 void SpawnTheodore(int xx, int yy);
-#endif
 void RespawnItem(int i, BOOL FlipFlag);
 void DeleteItem(int ii, int i);
 void ProcessItems();
@@ -85,9 +75,7 @@ void GetItemStr(int i);
 void CheckIdentify(int pnum, int cii);
 void DoRepair(int pnum, int cii);
 void DoRecharge(int pnum, int cii);
-#ifdef HELLFIRE
 void DoOil(int pnum, int cii);
-#endif
 void PrintItemPower(char plidx, ItemStruct *x);
 void DrawUniqueInfo();
 void PrintItemDetails(ItemStruct *x);
@@ -120,9 +108,7 @@ void PutItemRecord(int nSeed, WORD wCI, int nIndex);
 
 /* data */
 
-#ifdef HELLFIRE
 extern int MaxGold;
-#endif
 
 extern BYTE ItemCAnimTbl[];
 extern int ItemInvSnds[];
