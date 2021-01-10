@@ -1262,10 +1262,8 @@ static int RndSFX(int psfx)
 		nRand = 2;
 	else if (psfx == PS_ROGUE69)
 		nRand = 2;
-#ifdef HELLFIRE
 	else if (psfx == PS_MONK69)
 		nRand = 2;
-#endif
 	else if (psfx == PS_SWING)
 		nRand = 2;
 	else if (psfx == LS_ACID)
@@ -1353,11 +1351,9 @@ static void priv_sound_init(BYTE bLoadMask)
 			continue;
 		}
 
-#ifndef HELLFIRE
-		if (sgSFX[i].bFlags & sfx_HELLFIRE) {
+		if (!gbIsHellfire && sgSFX[i].bFlags & sfx_HELLFIRE) {
 			continue;
 		}
-#endif
 
 		sgSFX[i].pSnd = sound_file_load(sgSFX[i].pszName);
 	}
@@ -1370,23 +1366,20 @@ void sound_init()
 		mask |= sfx_WARRIOR;
 		if (!gbIsSpawn)
 			mask |= (sfx_ROGUE | sfx_SORCEROR);
-#ifdef HELLFIRE
-		mask |= sfx_MONK;
-#endif
+		if (gbIsHellfire)
+			mask |= sfx_MONK;
 	} else if (plr[myplr]._pClass == PC_WARRIOR) {
 		mask |= sfx_WARRIOR;
 	} else if (plr[myplr]._pClass == PC_ROGUE) {
 		mask |= sfx_ROGUE;
 	} else if (plr[myplr]._pClass == PC_SORCERER) {
 		mask |= sfx_SORCEROR;
-#ifdef HELLFIRE
 	} else if (plr[myplr]._pClass == PC_MONK) {
 		mask |= sfx_MONK;
 	} else if (plr[myplr]._pClass == PC_BARD) {
 		mask |= sfx_ROGUE;
 	} else if (plr[myplr]._pClass == PC_BARBARIAN) {
 		mask |= sfx_WARRIOR;
-#endif
 	} else {
 		app_fatal("effects:1");
 	}

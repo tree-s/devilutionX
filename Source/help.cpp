@@ -8,7 +8,7 @@
 DEVILUTION_BEGIN_NAMESPACE
 
 int help_select_line;
-int dword_634494;
+int unused_help;
 BOOL helpflag;
 int displayinghelp[22]; /* check, does nothing? */
 int HelpTop;
@@ -445,7 +445,7 @@ const char gszHelpText[] = {
 void InitHelp()
 {
 	helpflag = FALSE;
-	dword_634494 = 0;
+	unused_help = 0;
 	displayinghelp[0] = 0;
 }
 
@@ -478,11 +478,10 @@ void DrawHelp()
 
 	DrawSTextHelp();
 	DrawQTextBack();
-#ifdef HELLFIRE
-	PrintSString(0, 2, TRUE, "Hellfire Help", COL_GOLD, 0);
-#else
-	PrintSString(0, 2, TRUE, "Diablo Help", COL_GOLD, 0);
-#endif
+	if (gbIsHellfire)
+		PrintSString(0, 2, TRUE, "Hellfire Help", COL_GOLD, 0);
+	else
+		PrintSString(0, 2, TRUE, "Diablo Help", COL_GOLD, 0);
 	DrawSLine(5);
 
 	s = &gszHelpText[0];

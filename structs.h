@@ -523,11 +523,7 @@ typedef struct MonsterData {
 } MonsterData;
 
 typedef struct CMonster {
-#ifdef HELLFIRE
 	int mtype;
-#else
-	unsigned char mtype;
-#endif
 	// TODO: Add enum for place flags
 	unsigned char mPlaceFlags;
 	AnimStruct Anims[6];
@@ -623,11 +619,7 @@ typedef struct MonsterStruct { // note: missing field _mAFNum
 } MonsterStruct;
 
 typedef struct UniqMonstStruct {
-#ifdef HELLFIRE
 	int mtype;
-#else
-	char mtype;
-#endif
 	const char *mName;
 	const char *mTrnName;
 	unsigned char mlevel;
@@ -807,14 +799,12 @@ typedef struct TCmdGItem {
 	WORD wValue;
 	DWORD dwBuff;
 	int dwTime;
-#ifdef HELLFIRE
 	WORD wToHit;
 	WORD wMaxDam;
 	BYTE bMinStr;
 	BYTE bMinMag;
 	BYTE bMinDex;
 	BYTE bAC;
-#endif
 } TCmdGItem;
 
 typedef struct TCmdPItem {
@@ -831,14 +821,12 @@ typedef struct TCmdPItem {
 	BYTE bMCh;
 	WORD wValue;
 	DWORD dwBuff;
-#ifdef HELLFIRE
 	WORD wToHit;
 	WORD wMaxDam;
 	BYTE bMinStr;
 	BYTE bMinMag;
 	BYTE bMinDex;
 	BYTE bAC;
-#endif
 } TCmdPItem;
 
 typedef struct TCmdChItem {
@@ -913,14 +901,12 @@ typedef struct TSyncHeader {
 	WORD wPInvCI;
 	DWORD dwPInvSeed;
 	BYTE bPInvId;
-#ifdef HELLFIRE
 	WORD wToHit;
 	WORD wMaxDam;
 	BYTE bMinStr;
 	BYTE bMinMag;
 	BYTE bMinDex;
 	BYTE bAC;
-#endif
 } TSyncHeader;
 
 typedef struct TSyncMonster {
@@ -1019,11 +1005,7 @@ typedef struct QuestStruct {
 	int _qty;
 	unsigned char _qslvl;
 	unsigned char _qidx;
-#ifndef HELLFIRE
-	unsigned char _qmsg;
-#else
 	unsigned int _qmsg;
-#endif
 	unsigned char _qvar1;
 	unsigned char _qvar2;
 	BOOL _qlog;
@@ -1150,7 +1132,6 @@ typedef struct QuestTalkData {
 	int _qpw;
 	int _qbone;
 	int _qvb;
-#ifdef HELLFIRE
 	int _qgrv;
 	int _qfarm;
 	int _qgirl;
@@ -1159,7 +1140,6 @@ typedef struct QuestTalkData {
 	int _qnakrul;
 	int _qjersy;
 	int _qhf8;
-#endif
 } QuestTalkData;
 
 //////////////////////////////////////////////////

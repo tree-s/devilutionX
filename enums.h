@@ -1532,8 +1532,7 @@ typedef enum missile_graphic_id {
 	MFILE_BONEDEMON,
 	MFILE_EXORA1,
 	MFILE_EXBL3,
-	MFILE_NULL,
-	MFILE_NONE = 0xFF, // BUGFIX: should be `MFILE_NONE = MFILE_SCBSEXPD+1`, i.e. MFILE_NULL, since there would otherwise be an out-of-bounds in SetMissAnim when accessing misfiledata for any of the missiles that have MFILE_NONE as mFileNum in missiledata.
+	MFILE_NONE, // BUGFIX: should be `MFILE_NONE = MFILE_SCBSEXPD+1`, i.e. MFILE_NULL, since there would otherwise be an out-of-bounds in SetMissAnim when accessing misfiledata for any of the missiles that have MFILE_NONE as mFileNum in missiledata. (fixed)
 } missile_graphic_id;
 
 typedef enum _mai_id {
@@ -2730,13 +2729,10 @@ typedef enum _talker_id {
 	TOWN_BMAID   = 0x7,
 	TOWN_PEGBOY  = 0x8,
 	TOWN_COW     = 0x9,
-#ifdef HELLFIRE
 	TOWN_FARMER  = 0xA,
 	TOWN_GIRL    = 0xB,
 	TOWN_COWFARM = 0xC,
-#else
-	TOWN_PRIEST  = 0xA,
-#endif
+	TOWN_PRIEST,
 } _talker_id;
 
 typedef enum _music_id {
@@ -2745,10 +2741,8 @@ typedef enum _music_id {
 	TMUSIC_L2,
 	TMUSIC_L3,
 	TMUSIC_L4,
-#ifdef HELLFIRE
 	TMUSIC_L5,
 	TMUSIC_L6,
-#endif
 	TMUSIC_INTRO,
 	NUM_MUSIC,
 } _music_id;
@@ -2919,7 +2913,7 @@ typedef enum item_misc_id {
 	IMISC_RING      = 0x19,
 	IMISC_AMULET    = 0x1A,
 	IMISC_UNIQUE    = 0x1B,
-	IMISC_MEAT      = 0x1C, /* from demo/PSX */
+	IMISC_FOOD      = 0x1C, /* from demo/PSX */
 	IMISC_OILFIRST  = 0x1D,
 	IMISC_OILOF     = 0x1E, /* oils are beta or hellfire only */
 	IMISC_OILACC    = 0x1F,
@@ -2963,7 +2957,7 @@ typedef enum item_type {
 	ITYPE_GOLD   = 0xB,
 	ITYPE_RING   = 0xC,
 	ITYPE_AMULET = 0xD,
-	ITYPE_MEAT   = 0xE, /* used in demo, might be generic for 'food' */
+	ITYPE_FOOD   = 0xE, /* used in demo */
 	ITYPE_NONE   = -1,
 } item_type;
 
@@ -3118,11 +3112,7 @@ typedef enum _unique_items {
 	UITEM_STEELVEIL    = 0x6,
 	UITEM_ARMOFVAL     = 0x7,
 	UITEM_GRISWOLD     = 0x8,
-#ifndef HELLFIRE
-	UITEM_LGTFORGE     = 0x9,
-#else
 	UITEM_BOVINE       = 0x9,
-#endif
 	UITEM_RIFTBOW      = 0xA,
 	UITEM_NEEDLER      = 0xB,
 	UITEM_CELESTBOW    = 0xC,
@@ -3207,28 +3197,14 @@ typedef enum _unique_items {
 } _unique_items;
 
 typedef enum plr_class {
-	PC_WARRIOR  = 0x0,
-	PC_ROGUE    = 0x1,
-	PC_SORCERER = 0x2,
-#ifdef HELLFIRE
+	PC_WARRIOR   = 0x0,
+	PC_ROGUE     = 0x1,
+	PC_SORCERER  = 0x2,
 	PC_MONK      = 0x3,
 	PC_BARD      = 0x4,
 	PC_BARBARIAN = 0x5,
-#endif
 	NUM_CLASSES
 } plr_class;
-
-typedef enum _ui_classes {
-	UI_WARRIOR     = 0x0,
-	UI_ROGUE       = 0x1,
-	UI_SORCERER    = 0x2,
-#ifdef HELLFIRE
-	UI_MONK        = 0x3,
-	UI_BARD        = 0x4,
-	UI_BARBARIAN   = 0x5,
-#endif
-	UI_NUM_CLASSES,
-} _ui_classes;
 
 typedef enum _walk_path {
 	WALK_NE   = 0x1,
@@ -3416,7 +3392,6 @@ typedef enum shrine_type {
 	SHRINE_ORNATE       = 23,
 	SHRINE_GLIMMERING   = 24,
 	SHRINE_TAINTED      = 25,
-#ifdef HELLFIRE
 	SHRINE_OILY         = 26,
 	SHRINE_GLOWING      = 27,
 	SHRINE_MENDICANT    = 28,
@@ -3425,7 +3400,6 @@ typedef enum shrine_type {
 	SHRINE_SHIMMERING   = 31,
 	SHRINE_SOLAR        = 32,
 	SHRINE_MURPHYS      = 33,
-#endif
 	NUM_SHRINETYPE
 } shrine_type;
 

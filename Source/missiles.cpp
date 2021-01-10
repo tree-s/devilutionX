@@ -20,9 +20,7 @@ int numchains;
 int XDirAdd[8] = { 1, 0, -1, -1, -1, 0, 1, 1 };
 /** Maps from direction to Y-offset. */
 int YDirAdd[8] = { 1, 1, 1, 0, -1, -1, -1, 0 };
-#ifdef HELLFIRE
 int CrawlNum[19] = { 0, 3, 12, 45, 94, 159, 240, 337, 450, 579, 724, 885, 1062, 1255, 1464, 1689, 1930, 2187, 2460 };
-#endif
 
 void GetDamageAmt(int i, int *mind, int *maxd)
 {
@@ -39,18 +37,9 @@ void GetDamageAmt(int i, int *mind, int *maxd)
 		break;
 	case SPL_HEAL: /// BUGFIX: healing calculation is unused
 		*mind = plr[myplr]._pLevel + sl + 1;
-#ifdef HELLFIRE
 		if (plr[myplr]._pClass == PC_WARRIOR || plr[myplr]._pClass == PC_MONK || plr[myplr]._pClass == PC_BARBARIAN) {
-#else
-		if (plr[myplr]._pClass == PC_WARRIOR) {
-#endif
 			*mind <<= 1;
-		}
-#ifdef HELLFIRE
-		else if (plr[myplr]._pClass == PC_ROGUE || plr[myplr]._pClass == PC_BARD) {
-#else
-		if (plr[myplr]._pClass == PC_ROGUE) {
-#endif
+		} else if (plr[myplr]._pClass == PC_ROGUE || plr[myplr]._pClass == PC_BARD) {
 			*mind += *mind >> 1;
 		}
 		*maxd = 10;
@@ -60,18 +49,9 @@ void GetDamageAmt(int i, int *mind, int *maxd)
 		for (k = 0; k < sl; k++) {
 			*maxd += 6;
 		}
-#ifdef HELLFIRE
 		if (plr[myplr]._pClass == PC_WARRIOR || plr[myplr]._pClass == PC_MONK || plr[myplr]._pClass == PC_BARBARIAN) {
-#else
-		if (plr[myplr]._pClass == PC_WARRIOR) {
-#endif
 			*maxd <<= 1;
-		}
-#ifdef HELLFIRE
-		else if (plr[myplr]._pClass == PC_ROGUE || plr[myplr]._pClass == PC_BARD) {
-#else
-		if (plr[myplr]._pClass == PC_ROGUE) {
-#endif
+		} else if (plr[myplr]._pClass == PC_ROGUE || plr[myplr]._pClass == PC_BARD) {
 			*maxd += *maxd >> 1;
 		}
 		*mind = -1;
@@ -107,13 +87,11 @@ void GetDamageAmt(int i, int *mind, int *maxd)
 	case SPL_RESURRECT:
 	case SPL_TELEKINESIS:
 	case SPL_BONESPIRIT:
-#ifdef HELLFIRE
 	case SPL_WARP:
 	case SPL_REFLECT:
 	case SPL_BERSERK:
 	case SPL_SEARCH:
 	case SPL_RUNESTONE:
-#endif
 		*mind = -1;
 		*maxd = -1;
 		break;
@@ -202,18 +180,10 @@ void GetDamageAmt(int i, int *mind, int *maxd)
 		break;
 	case SPL_HEALOTHER: /// BUGFIX: healing calculation is unused
 		*mind = plr[myplr]._pLevel + sl + 1;
-#ifdef HELLFIRE
 		if (plr[myplr]._pClass == PC_WARRIOR || plr[myplr]._pClass == PC_MONK || plr[myplr]._pClass == PC_BARBARIAN) {
-#else
-		if (plr[myplr]._pClass == PC_WARRIOR) {
-#endif
 			*mind <<= 1;
 		}
-#ifdef HELLFIRE
 		if (plr[myplr]._pClass == PC_ROGUE || plr[myplr]._pClass == PC_BARD) {
-#else
-		if (plr[myplr]._pClass == PC_ROGUE) {
-#endif
 			*mind += *mind >> 1;
 		}
 		*maxd = 10;
@@ -223,18 +193,10 @@ void GetDamageAmt(int i, int *mind, int *maxd)
 		for (k = 0; k < sl; k++) {
 			*maxd += 6;
 		}
-#ifdef HELLFIRE
 		if (plr[myplr]._pClass == PC_WARRIOR || plr[myplr]._pClass == PC_MONK || plr[myplr]._pClass == PC_BARBARIAN) {
-#else
-		if (plr[myplr]._pClass == PC_WARRIOR) {
-#endif
 			*maxd <<= 1;
 		}
-#ifdef HELLFIRE
 		if (plr[myplr]._pClass == PC_ROGUE || plr[myplr]._pClass == PC_BARD) {
-#else
-		if (plr[myplr]._pClass == PC_ROGUE) {
-#endif
 			*maxd += *maxd >> 1;
 		}
 		*mind = -1;
@@ -267,20 +229,13 @@ BOOL CheckBlock(int fx, int fy, int tx, int ty)
 int FindClosest(int sx, int sy, int rad)
 {
 	int j, i, mid, tx, ty, cr;
-#ifndef HELLFIRE
-	int CrawlNum[19] = { 0, 3, 12, 45, 94, 159, 240, 337, 450, 579, 724, 885, 1062, 1255, 1464, 1689, 1930, 2187, 2460 };
-#endif
 
 	if (rad > 19)
 		rad = 19;
 
 	for (i = 1; i < rad; i++) {
 		cr = CrawlNum[i] + 2;
-#ifdef HELLFIRE
-		for (j = CrawlTable[CrawlNum[i]]; j > 0; j--) { // BUGFIX: should cast to BYTE or CrawlTable header will be wrong
-#else
 		for (j = (BYTE)CrawlTable[CrawlNum[i]]; j > 0; j--) {
-#endif
 			tx = sx + CrawlTable[cr - 1];
 			ty = sy + CrawlTable[cr];
 			if (tx > 0 && tx < MAXDUNX && ty > 0 && ty < MAXDUNY) {
@@ -341,7 +296,7 @@ int GetDirection8(int x1, int y1, int x2, int y2)
 	my = abs(y2 - y1);
 	if (my > 15)
 		my = 15;
-	md = Dirs[my][mx];
+	md = Dirs[my][mx]; // BUGFIX: 0x0 causes OOB (99)
 	if (x1 > x2) {
 		if (y1 > y2)
 			md = urtoll[md];
@@ -361,9 +316,9 @@ int GetDirection16(int x1, int y1, int x2, int y2)
 		{ 4, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 		{ 4, 3, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
 		{ 4, 3, 3, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 },
-		{ 4, 4, 3, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, // BUGFIX: should be `{ 4, 4, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },`
+		{ 4, 4, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, // BUGFIX: should be `{ 4, 4, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },` (fixed)
 		{ 4, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-		{ 4, 4, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1 }, // BUGFIX: should be `{ 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1 },`
+		{ 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1 }, // BUGFIX: should be `{ 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1 },` (fixed)
 		{ 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1 },
 		{ 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1 },
 		{ 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1 },
@@ -374,25 +329,6 @@ int GetDirection16(int x1, int y1, int x2, int y2)
 		{ 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2 },
 		{ 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2 }
 	};
-	// The correct quadrant of direction indices is presented below:
-	/*
-		{ 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 4, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 4, 3, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 4, 3, 3, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 },
-		{ 4, 4, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-		{ 4, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-		{ 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1 },
-		{ 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1 },
-		{ 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1 },
-		{ 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1 },
-		{ 4, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1 },
-		{ 4, 4, 4, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 1 },
-		{ 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2 },
-		{ 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2 },
-		{ 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2 },
-		{ 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2 }
-	*/
 
 	BYTE urtoll[5] = { 6, 7, 8, 9, 10 };
 	BYTE ultolr[5] = { 6, 5, 4, 3, 2 };
@@ -406,7 +342,7 @@ int GetDirection16(int x1, int y1, int x2, int y2)
 	my = abs(y2 - y1);
 	if (my > 15)
 		my = 15;
-	md = Dirs[my][mx];
+	md = Dirs[my][mx]; // BUGFIX, md can be 99, leading to an OOB read
 	if (x1 > x2) {
 		if (y1 > y2)
 			md = urtoll[md];
@@ -441,20 +377,16 @@ void GetMissileVel(int i, int sx, int sy, int dx, int dy, int v)
 {
 	double dxp, dyp, dr;
 
-#ifndef HELLFIRE
 	if (dx != sx || dy != sy) {
-#endif
 		dxp = (dx + sy - sx - dy) * (1 << 21);
 		dyp = (dy + dx - sx - sy) * (1 << 21);
 		dr = sqrt(dxp * dxp + dyp * dyp);
 		missile[i]._mixvel = (dxp * (v << 16)) / dr;
 		missile[i]._miyvel = (dyp * (v << 15)) / dr;
-#ifndef HELLFIRE
 	} else {
 		missile[i]._mixvel = 0;
 		missile[i]._miyvel = 0;
 	}
-#endif
 }
 
 void PutMissile(int i)
@@ -585,11 +517,7 @@ BOOL MonsterTrapHit(int m, int mindam, int maxdam, int dist, int t, BOOLEAN shif
 	}
 
 	hit = random_(68, 100);
-#ifdef HELLFIRE
-	hper = 90 - (char)monster[m].mArmorClass - dist;
-#else
 	hper = 90 - (BYTE)monster[m].mArmorClass - dist;
-#endif
 	if (hper < 5)
 		hper = 5;
 	if (hper > 95)
@@ -692,22 +620,14 @@ BOOL MonsterMHit(int pnum, int m, int mindam, int maxdam, int dist, int t, BOOLE
 			hper += 50;
 			if (plr[pnum]._pClass == PC_ROGUE)
 				hper += 20;
-#ifdef HELLFIRE
 			if (plr[pnum]._pClass == PC_WARRIOR || plr[pnum]._pClass == PC_BARD)
 				hper += 10;
-#endif
-#ifndef HELLFIRE
-			if (plr[pnum]._pClass == PC_WARRIOR)
-				hper += 10;
-#endif
 		} else {
 			hper = plr[pnum]._pMagic - (monster[m].mLevel << 1) - dist + 50;
 			if (plr[pnum]._pClass == PC_SORCERER)
 				hper += 20;
-#ifdef HELLFIRE
 			else if (plr[pnum]._pClass == PC_BARD)
 				hper += 10;
-#endif
 		}
 #ifdef HELLFIRE
 	} else {
@@ -850,7 +770,7 @@ BOOL PlayerMHit(int pnum, int m, int dist, int mind, int maxd, int mtype, BOOLEA
 	if (mtype == MIS_ACIDPUD)
 		blk = 100;
 	if (m != -1)
-		blkper = plr[pnum]._pBaseToBlk + plr[pnum]._pDexterity - ((monster[m].mLevel - plr[pnum]._pLevel) << 1);
+		blkper = plr[pnum]._pBaseToBlk + plr[pnum]._pDexterity - ((monster[m].mLevel - plr[pnum]._pLevel) * 2);
 	else
 		blkper = plr[pnum]._pBaseToBlk + plr[pnum]._pDexterity;
 	if (blkper < 0)
@@ -933,14 +853,12 @@ BOOL PlayerMHit(int pnum, int m, int dist, int mind, int maxd, int mtype, BOOLEA
 					PlaySfxLoc(PS_ROGUE69, plr[pnum]._px, plr[pnum]._py);
 				} else if (plr[pnum]._pClass == PC_SORCERER) {
 					PlaySfxLoc(PS_MAGE69, plr[pnum]._px, plr[pnum]._py);
-#ifdef HELLFIRE
 				} else if (plr[pnum]._pClass == PC_MONK) {
 					PlaySfxLoc(PS_MONK69, plr[pnum]._px, plr[pnum]._py);
 				} else if (plr[pnum]._pClass == PC_BARD) {
 					PlaySfxLoc(PS_ROGUE69, plr[pnum]._px, plr[pnum]._py);
 				} else if (plr[pnum]._pClass == PC_BARBARIAN) {
 					PlaySfxLoc(PS_WARR69, plr[pnum]._px, plr[pnum]._py);
-#endif
 				}
 				drawhpflag = TRUE;
 			}
@@ -1021,11 +939,7 @@ BOOL Plr2PlrMHit(int pnum, int p, int mindam, int maxdam, int dist, int mtype, B
 		    + plr[pnum]._pDexterity + 50;
 		if (plr[pnum]._pClass == PC_ROGUE)
 			hit += 20;
-#ifdef HELLFIRE
 		if (plr[pnum]._pClass == PC_WARRIOR || plr[pnum]._pClass == PC_BARD)
-#else
-		if (plr[pnum]._pClass == PC_WARRIOR)
-#endif
 			hit += 10;
 	} else {
 		hit = plr[pnum]._pMagic
@@ -1034,10 +948,8 @@ BOOL Plr2PlrMHit(int pnum, int p, int mindam, int maxdam, int dist, int mtype, B
 		    + 50;
 		if (plr[pnum]._pClass == PC_SORCERER)
 			hit += 20;
-#ifdef HELLFIRE
 		else if (plr[pnum]._pClass == PC_BARD)
 			hit += 10;
-#endif
 	}
 	if (hit < 5)
 		hit = 5;
@@ -1081,14 +993,12 @@ BOOL Plr2PlrMHit(int pnum, int p, int mindam, int maxdam, int dist, int mtype, B
 				PlaySfxLoc(PS_ROGUE69, plr[pnum]._px, plr[pnum]._py);
 			} else if (plr[pnum]._pClass == PC_SORCERER) {
 				PlaySfxLoc(PS_MAGE69, plr[pnum]._px, plr[pnum]._py);
-#ifdef HELLFIRE
 			} else if (plr[pnum]._pClass == PC_MONK) {
 				PlaySfxLoc(PS_MONK69, plr[pnum]._px, plr[pnum]._py);
 			} else if (plr[pnum]._pClass == PC_BARD) {
 				PlaySfxLoc(PS_ROGUE69, plr[pnum]._px, plr[pnum]._py);
 			} else if (plr[pnum]._pClass == PC_BARBARIAN) {
 				PlaySfxLoc(PS_WARR69, plr[pnum]._px, plr[pnum]._py);
-#endif
 			}
 			return TRUE;
 		} else {
@@ -1295,8 +1205,8 @@ void SetMissAnim(int mi, int animtype)
 {
 	int dir = missile[mi]._mimfnum;
 
-	if (animtype > MFILE_NULL) {
-		animtype = MFILE_NULL;
+	if (animtype > MFILE_NONE) {
+		animtype = MFILE_NONE;
 	}
 
 	missile[mi]._miAnimType = animtype;
@@ -1349,6 +1259,8 @@ void InitMissileGFX()
 	int mi;
 
 	for (mi = 0; misfiledata[mi].mAnimFAmt; mi++) {
+        if (!gbIsHellfire && mi > MFILE_SCBSEXPD)
+            break;
 		if (!(misfiledata[mi].mFlags & MFLAG_HIDDEN))
 			LoadMissileGFX(mi);
 	}
@@ -1454,7 +1366,6 @@ void InitMissiles()
 #endif
 }
 
-#ifdef HELLFIRE
 void missiles_hive_explosion(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
 {
 	AddMissile(80, 62, 80, 62, midir, MIS_HIVEEXP, mienemy, id, dam, 0);
@@ -2152,7 +2063,6 @@ void missiles_hbolt_arrow(int mi, int sx, int sy, int dx, int dy, int midir, cha
 	missile[mi]._miVar2 = sy;
 	missile[mi]._mlid = AddLight(sx, sy, 8);
 }
-#endif
 
 void AddLArrow(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
 {
@@ -2378,19 +2288,12 @@ void miss_null_33(int mi, int sx, int sy, int dx, int dy, int midir, char mienem
 void AddTeleport(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
 {
 	int i, pn, k, j, tx, ty;
-#ifndef HELLFIRE
-	int CrawlNum[6] = { 0, 3, 12, 45, 94, 159 };
-#endif
 
 	missile[mi]._miDelFlag = TRUE;
 	for (i = 0; i < 6; i++) {
 		k = CrawlNum[i];
 		pn = k + 2;
-#ifdef HELLFIRE
-		for (j = CrawlTable[k]; j > 0; j--) { // BUGFIX: should cast to BYTE or CrawlTable header will be wrong
-#else
 		for (j = (BYTE)CrawlTable[k]; j > 0; j--) {
-#endif
 			tx = dx + CrawlTable[pn - 1];
 			ty = dy + CrawlTable[pn];
 			if (0 < tx && tx < MAXDUNX && 0 < ty && ty < MAXDUNY) {
@@ -2602,19 +2505,12 @@ BOOL CheckIfTrig(int x, int y)
 void AddTown(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
 {
 	int i, j, k, mx, tx, ty, dp;
-#ifndef HELLFIRE
-	int CrawlNum[6] = { 0, 3, 12, 45, 94, 159 };
-#endif
 
 	if (currlevel != 0) {
 		missile[mi]._miDelFlag = TRUE;
 		for (j = 0; j < 6; j++) {
 			k = CrawlNum[j] + 2;
-#ifdef HELLFIRE
-			for (i = CrawlTable[CrawlNum[j]]; i > 0; i--) { // BUGFIX: should cast to BYTE or CrawlTable header will be wrong
-#else
 			for (i = (BYTE)CrawlTable[CrawlNum[j]]; i > 0; i--) {
-#endif
 				tx = dx + CrawlTable[k - 1];
 				ty = dy + CrawlTable[k];
 				if (tx > 0 && tx < MAXDUNX && ty > 0 && ty < MAXDUNY) {
@@ -2735,9 +2631,6 @@ void AddFiremove(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy
 void AddGuardian(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
 {
 	int i, pn, k, j, tx, ty;
-#ifndef HELLFIRE
-	int CrawlNum[6] = { 0, 3, 12, 45, 94, 159 };
-#endif
 
 	missile[mi]._midam = random_(62, 10) + (plr[id]._pLevel >> 1) + 1;
 	for (i = missile[mi]._mispllvl; i > 0; i--) {
@@ -2748,11 +2641,7 @@ void AddGuardian(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy
 	for (i = 0; i < 6; i++) {
 		pn = CrawlNum[i];
 		k = pn + 2;
-#ifdef HELLFIRE
-		for (j = CrawlTable[pn]; j > 0; j--) { // BUGFIX: should cast to BYTE or CrawlTable header will be wrong
-#else
 		for (j = (BYTE)CrawlTable[pn]; j > 0; j--) {
-#endif
 			tx = dx + CrawlTable[k - 1];
 			ty = dy + CrawlTable[k];
 			pn = dPiece[tx][ty];
@@ -2971,29 +2860,18 @@ void AddAcidpud(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy,
 void AddStone(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
 {
 	int i, j, k, l, tx, ty, mid;
-#ifndef HELLFIRE
-	int CrawlNum[6] = { 0, 3, 12, 45, 94, 159 };
-#endif
 
 	missile[mi]._misource = id;
 	for (i = 0; i < 6; i++) {
 		k = CrawlNum[i];
 		l = k + 2;
-#ifdef HELLFIRE
-		for (j = CrawlTable[k]; j > 0; j--) { // BUGFIX: should cast to BYTE or CrawlTable header will be wrong
-#else
 		for (j = (BYTE)CrawlTable[k]; j > 0; j--) {
-#endif
 			tx = dx + CrawlTable[l - 1];
 			ty = dy + CrawlTable[l];
 			if (tx > 0 && tx < MAXDUNX && ty > 0 && ty < MAXDUNY) {
 				mid = dMonster[tx][ty];
 				mid = mid > 0 ? mid - 1 : -1 - mid;
-#ifdef HELLFIRE
 				if (mid > MAX_PLRS - 1 && monster[mid]._mAi != AI_DIABLO && monster[mid].MType->mtype != MT_NAKRUL) {
-#else
-				if (mid > MAX_PLRS - 1 && monster[mid]._mAi != AI_DIABLO) {
-#endif
 					if (monster[mid]._mmode != MM_FADEIN && monster[mid]._mmode != MM_FADEOUT && monster[mid]._mmode != MM_CHARGE) {
 						j = -99;
 						i = 6;
@@ -3111,19 +2989,10 @@ void AddHeal(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, in
 		HealAmount += (random_(57, 6) + 1) << 6;
 	}
 
-	if (plr[id]._pClass == PC_WARRIOR)
+	if (plr[id]._pClass == PC_WARRIOR || plr[id]._pClass == PC_BARBARIAN || plr[id]._pClass == PC_MONK)
 		HealAmount <<= 1;
-#ifdef HELLFIRE
-	else if (plr[id]._pClass == PC_BARBARIAN || plr[id]._pClass == PC_MONK)
-		HealAmount <<= 1;
-#endif
-
-	if (plr[id]._pClass == PC_ROGUE)
+	else if (plr[id]._pClass == PC_ROGUE || plr[id]._pClass == PC_BARD)
 		HealAmount += HealAmount >> 1;
-#ifdef HELLFIRE
-	else if (plr[id]._pClass == PC_BARD)
-		HealAmount += HealAmount >> 1;
-#endif
 
 	plr[id]._pHitPoints += HealAmount;
 	if (plr[id]._pHitPoints > plr[id]._pMaxHP)
@@ -3195,19 +3064,12 @@ void AddIdentify(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy
 void AddFirewallC(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
 {
 	int i, j, k, tx, ty, pn;
-#ifndef HELLFIRE
-	int CrawlNum[6] = { 0, 3, 12, 45, 94, 159 };
-#endif
 
 	missile[mi]._miDelFlag = TRUE;
 	for (i = 0; i < 6; i++) {
 		k = CrawlNum[i];
 		pn = k + 2;
-#ifdef HELLFIRE
-		for (j = CrawlTable[k]; j > 0; j--) { // BUGFIX: should cast to BYTE or CrawlTable header will be wrong
-#else
 		for (j = (BYTE)CrawlTable[k]; j > 0; j--) {
-#endif
 			tx = dx + CrawlTable[pn - 1];
 			ty = dy + CrawlTable[pn];
 			if (0 < tx && tx < MAXDUNX && 0 < ty && ty < MAXDUNY) {
@@ -3285,7 +3147,6 @@ void AddNova(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, in
 
 void AddBlodboil(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
 {
-#ifdef HELLFIRE
 	int lvl;
 
 	if (id == -1 || plr[id]._pSpellFlags & 6 || plr[id]._pHitPoints <= plr[id]._pLevel << 6) {
@@ -3295,7 +3156,7 @@ void AddBlodboil(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy
 			PS_WARR70,
 			PS_ROGUE70,
 			PS_MAGE70,
-			PS_MAGE70, // BUGFIX: PS_MONK70?
+			PS_MONK70, // BUGFIX: PS_MONK70? (fixed)
 			PS_ROGUE70,
 			PS_WARR70
 		};
@@ -3314,9 +3175,6 @@ void AddBlodboil(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy
 		force_redraw = 255;
 		PlaySfxLoc(blodboilSFX[plr[id]._pClass], plr[id]._px, plr[id]._py);
 	}
-#else
-	missile[mi]._miDelFlag = 1;
-#endif
 }
 
 void AddRepair(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
@@ -3672,9 +3530,6 @@ void MI_Dummy(int i)
 
 void MI_Golem(int i)
 {
-#ifndef HELLFIRE
-	int CrawlNum[6] = { 0, 3, 12, 45, 94, 159 };
-#endif
 	int tx, ty, dp, l, m, src, k, tid;
 	char *ct;
 
@@ -3683,11 +3538,7 @@ void MI_Golem(int i)
 		for (l = 0; l < 6; l++) {
 			k = CrawlNum[l];
 			tid = k + 2;
-#ifdef HELLFIRE
-			for (m = CrawlTable[k]; m > 0; m--) { // BUGFIX: should cast to BYTE or CrawlTable header will be wrong
-#else
 			for (m = (BYTE)CrawlTable[k]; m > 0; m--) {
-#endif
 				ct = &CrawlTable[tid];
 				tx = missile[i]._miVar4 + *(ct - 1);
 				ty = missile[i]._miVar5 + *ct;
@@ -3881,7 +3732,6 @@ void MI_Firebolt(int i)
 				missile[i]._miDelFlag = FALSE;
 				PutMissile(i);
 				return;
-#ifdef HELLFIRE
 			case MIS_LICH:
 				AddMissile(missile[i]._mix, missile[i]._miy, i, 0, missile[i]._mimfnum, MIS_EXORA1, missile[i]._micaster, missile[i]._misource, 0, 0);
 				break;
@@ -3897,7 +3747,6 @@ void MI_Firebolt(int i)
 			case MIS_BONEDEMON:
 				AddMissile(missile[i]._mix, missile[i]._miy, i, 0, missile[i]._mimfnum, MIS_EXBL3, missile[i]._micaster, missile[i]._misource, 0, 0);
 				break;
-#endif
 			}
 			if (missile[i]._mlid >= 0)
 				AddUnLight(missile[i]._mlid);
@@ -4088,7 +3937,6 @@ void MI_Fireball(int i)
 	PutMissile(i);
 }
 
-#ifdef HELLFIRE
 void missiles_4359A0(int i)
 {
 	int t, j, k, tx, ty, dp;
@@ -4385,8 +4233,8 @@ void mi_flashfr(int i)
 	if (missile[i]._micaster == TARGET_MONSTERS && src != -1) {
 		missile[i]._mix = plr[src]._px;
 		missile[i]._miy = plr[src]._py;
-		missile[i]._mitxoff = plr[src]._pxoff << 16;
-		missile[i]._mityoff = plr[src]._pyoff << 16;
+		missile[i]._mitxoff = plr[src]._pxoff * 65536;
+		missile[i]._mityoff = plr[src]._pyoff * 65536;
 	}
 	missile[i]._mirange--;
 	if (missile[i]._mirange == 0) {
@@ -4419,8 +4267,8 @@ void mi_reflect(int i)
 	int src;
 
 	src = missile[i]._misource;
-	missile[i]._mitxoff = plr[src]._pxoff << 16;
-	missile[i]._mityoff = plr[src]._pyoff << 16;
+	missile[i]._mitxoff = plr[src]._pxoff * 65536;
+	missile[i]._mityoff = plr[src]._pyoff * 65536;
 	if (plr[src]._pmode == PM_WALK3) {
 		missile[i]._misx = plr[src]._pfutx + 2;
 		missile[i]._misy = plr[src]._pfuty - 1;
@@ -4637,7 +4485,6 @@ void mi_spec_arrow(int i)
 		missile[i]._miDelFlag = TRUE;
 }
 
-#endif
 void MI_Lightctrl(int i)
 {
 	int pn, dam, p, mx, my;
@@ -4826,8 +4673,8 @@ void MI_Manashield(int i)
 	id = missile[i]._misource;
 	missile[i]._mix = plr[id]._px;
 	missile[i]._miy = plr[id]._py;
-	missile[i]._mitxoff = plr[id]._pxoff << 16;
-	missile[i]._mityoff = plr[id]._pyoff << 16;
+	missile[i]._mitxoff = plr[id]._pxoff * 65536;
+	missile[i]._mityoff = plr[id]._pyoff * 65536;
 	if (plr[id]._pmode == PM_WALK3) {
 		missile[i]._misx = plr[id]._pfutx;
 		missile[i]._misy = plr[id]._pfuty;
@@ -4918,8 +4765,8 @@ void MI_Etherealize(int i)
 	src = missile[i]._misource;
 	missile[i]._mix = plr[src]._px;
 	missile[i]._miy = plr[src]._py;
-	missile[i]._mitxoff = plr[src]._pxoff << 16;
-	missile[i]._mityoff = plr[src]._pyoff << 16;
+	missile[i]._mitxoff = plr[src]._pxoff * 65536;
+	missile[i]._mityoff = plr[src]._pyoff * 65536;
 	if (plr[src]._pmode == PM_WALK3) {
 		missile[i]._misx = plr[src]._pfutx;
 		missile[i]._misy = plr[src]._pfuty;
@@ -5065,9 +4912,6 @@ void MI_Guardian(int i)
 void MI_Chain(int i)
 {
 	int sx, sy, id, l, n, m, k, rad, tx, ty, dir;
-#ifndef HELLFIRE
-	int CrawlNum[19] = { 0, 3, 12, 45, 94, 159, 240, 337, 450, 579, 724, 885, 1062, 1255, 1464, 1689, 1930, 2187, 2460 };
-#endif
 
 	id = missile[i]._misource;
 	sx = missile[i]._mix;
@@ -5080,11 +4924,7 @@ void MI_Chain(int i)
 	for (m = 1; m < rad; m++) {
 		k = CrawlNum[m];
 		l = k + 2;
-#ifdef HELLFIRE
-		for (n = CrawlTable[k]; n > 0; n--) { // BUGFIX: should cast to BYTE or CrawlTable header will be wrong
-#else
 		for (n = (BYTE)CrawlTable[k]; n > 0; n--) {
-#endif
 			tx = sx + CrawlTable[l - 1];
 			ty = sy + CrawlTable[l];
 			if (tx > 0 && tx < MAXDUNX && ty > 0 && ty < MAXDUNY && dMonster[tx][ty] > 0) {
@@ -5514,7 +5354,6 @@ void MI_Nova(int i)
 		missile[i]._miDelFlag = TRUE;
 }
 
-#ifdef HELLFIRE
 void MI_Blodboil(int i)
 {
 	int lvl, id, hpdif;
@@ -5527,7 +5366,7 @@ void MI_Blodboil(int i)
 				PS_WARR72,
 				PS_ROGUE72,
 				PS_MAGE72,
-				PS_MAGE72, // BUGFIX: should be PS_MONK72?
+				PS_MAGE72,
 				PS_ROGUE72,
 				PS_WARR72
 			};
@@ -5550,7 +5389,7 @@ void MI_Blodboil(int i)
 				PS_WARR72,
 				PS_ROGUE72,
 				PS_MAGE72,
-				PS_MAGE72, // BUGFIX: should be PS_MONK72?
+				PS_MAGE72,
 				PS_ROGUE72,
 				PS_WARR72
 			};
@@ -5566,12 +5405,6 @@ void MI_Blodboil(int i)
 		}
 	}
 }
-#else
-void MI_Blodboil(int i)
-{
-	missile[i]._miDelFlag = TRUE;
-}
-#endif
 
 void MI_Flame(int i)
 {
@@ -5912,11 +5745,7 @@ void ProcessMissiles()
 
 	i = 0;
 	while (i < nummissiles) {
-#ifdef HELLFIRE
-		if (missile[missileactive[i]]._miDelFlag == TRUE) {
-#else
 		if (missile[missileactive[i]]._miDelFlag) {
-#endif
 			DeleteMissile(missileactive[i], i);
 			i = 0;
 		} else {

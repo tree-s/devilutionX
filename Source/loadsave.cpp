@@ -12,7 +12,7 @@ BYTE *tbuff;
 bool gbIsHellfireSaveGame;
 int giNumberOfLevels;
 int giNumberQuests;
-int giNumberOfSmitPremiumItems;
+int giNumberOfSmithPremiumItems;
 
 static char BLoad()
 {
@@ -315,8 +315,8 @@ static void LoadPlayer(int i)
 	CopyInt(tbuff, &pPlayer->_pVar6);
 	CopyInt(tbuff, &pPlayer->_pVar7);
 	CopyInt(tbuff, &pPlayer->_pVar8);
-	CopyBytes(tbuff, giNumberOfLevels, &pPlayer->_pSLvlVisited);
 	CopyBytes(tbuff, giNumberOfLevels, &pPlayer->_pLvlVisited);
+	CopyBytes(tbuff, giNumberOfLevels, &pPlayer->_pSLvlVisited);
 	tbuff += 2; // Alignment
 
 	CopyInt(tbuff, &pPlayer->_pGFXLoad);
@@ -729,12 +729,12 @@ void LoadGame(BOOL firstflag)
 	if (gbIsHellfireSaveGame) {
 		giNumberOfLevels = 25;
 		giNumberQuests = 24;
-		giNumberOfSmitPremiumItems = 15;
+		giNumberOfSmithPremiumItems = 15;
 	} else {
 		// Todo initialize additional levels and quests if we are running Hellfire
 		giNumberOfLevels = 17;
 		giNumberQuests = 16;
-		giNumberOfSmitPremiumItems = 6;
+		giNumberOfSmithPremiumItems = 6;
 	}
 
 	setlevel = OLoad();
@@ -874,7 +874,7 @@ void LoadGame(BOOL firstflag)
 	numpremium = WLoad();
 	premiumlevel = WLoad();
 
-	for (i = 0; i < giNumberOfSmitPremiumItems; i++)
+	for (i = 0; i < giNumberOfSmithPremiumItems; i++)
 		LoadPremium(i);
 	if (gbIsHellfire && !gbIsHellfireSaveGame)
 		SpawnPremium(myplr);
@@ -1127,9 +1127,9 @@ static void SavePlayer(int i)
 	CopyInt(&pPlayer->_pVar6, tbuff);
 	CopyInt(&pPlayer->_pVar7, tbuff);
 	CopyInt(&pPlayer->_pVar8, tbuff);
-	CopyBytes(&pPlayer->_pLvlVisited, NUMLEVELS, tbuff);
-	CopyBytes(&pPlayer->_pSLvlVisited, NUMLEVELS, tbuff); // only 10 used
-	tbuff += 2;                                           // Alignment
+	CopyBytes(&pPlayer->_pLvlVisited, giNumberOfLevels, tbuff);
+	CopyBytes(&pPlayer->_pSLvlVisited, giNumberOfLevels, tbuff); // only 10 used
+	tbuff += 2;                                                  // Alignment
 
 	CopyInt(&pPlayer->_pGFXLoad, tbuff);
 	tbuff += 4 * 8; // Skip pointers _pNAnim
@@ -1289,12 +1289,12 @@ static void SaveMonster(int i)
 	tbuff += 1; // Alignment
 	CopyShort(&pMonster->mExp, tbuff);
 
-	// Wtite mHit for backwards compatabiliyt
+	// Write mHit for backwards compatibility
 	tempChar = pMonster->mHit < SCHAR_MAX ? pMonster->mHit : SCHAR_MAX;
 	CopyChar(&tempChar, tbuff);
 	CopyChar(&pMonster->mMinDamage, tbuff);
 	CopyChar(&pMonster->mMaxDamage, tbuff);
-	// Wtite mHit2 for backwards compatabiliyt
+	// Write mHit2 for backwards compatibility
 	tempChar = pMonster->mHit2 < SCHAR_MAX ? pMonster->mHit2 : SCHAR_MAX;
 	CopyChar(&tempChar, tbuff);
 	CopyChar(&pMonster->mMinDamage2, tbuff);
@@ -1513,6 +1513,16 @@ void SaveGame()
 	else
 		app_fatal("Invalid game state");
 
+	if (gbIsHellfire) {
+		giNumberOfLevels = 25;
+		giNumberQuests = 24;
+		giNumberOfSmithPremiumItems = 15;
+	} else {
+		giNumberOfLevels = 17;
+		giNumberQuests = 16;
+		giNumberOfSmithPremiumItems = 6;
+	}
+
 	OSave(setlevel);
 	WSave(setlvlnum);
 	WSave(currlevel);
@@ -1526,7 +1536,7 @@ void SaveGame()
 	WSave(nummissiles);
 	WSave(nobjects);
 
-	for (i = 0; i < NUMLEVELS; i++) {
+	for (i = 0; i < giNumberOfLevels; i++) {
 		ISave(glSeedTbl[i]);
 		WSave(gnLevelTypeTbl[i]);
 	}
@@ -1534,7 +1544,7 @@ void SaveGame()
 	plr[myplr].pDifficulty = gnDifficulty;
 	SavePlayer(myplr);
 
-	for (i = 0; i < MAXQUESTS; i++)
+	for (i = 0; i < giNumberQuests; i++)
 		SaveQuest(i);
 	for (i = 0; i < MAXPORTAL; i++)
 		SavePortal(i);
@@ -1633,7 +1643,7 @@ void SaveGame()
 	WSave(numpremium);
 	WSave(premiumlevel);
 
-	for (i = 0; i < SMITH_PREMIUM_ITEMS; i++)
+	for (i = 0; i < giNumberOfSmithPremiumItems; i++)
 		SavePremium(i);
 
 	OSave(automapflag);

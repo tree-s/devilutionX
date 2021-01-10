@@ -20,12 +20,11 @@ void mainmenu_refresh_music()
 {
 	music_start(menu_music_track_id);
 
-	if (gbIsSpawn)
-		return;
-
 	do {
 		menu_music_track_id++;
-		if (menu_music_track_id == NUM_MUSIC)
+		if (gbIsSpawn && menu_music_track_id > TMUSIC_L1)
+			menu_music_track_id = TMUSIC_L5;
+		if (menu_music_track_id == NUM_MUSIC || (!gbIsHellfire && menu_music_track_id > TMUSIC_L4))
 			menu_music_track_id = TMUSIC_TOWN;
 	} while (menu_music_track_id == TMUSIC_TOWN || menu_music_track_id == TMUSIC_L1);
 }
@@ -71,11 +70,10 @@ static BOOL mainmenu_multi_player()
 static void mainmenu_play_intro()
 {
 	music_stop();
-#ifdef HELLFIRE
-	play_movie("gendata\\Hellfire.smk", TRUE);
-#else
-	play_movie("gendata\\diablo1.smk", TRUE);
-#endif
+	if (gbIsHellfire)
+		play_movie("gendata\\Hellfire.smk", TRUE);
+	else
+		play_movie("gendata\\diablo1.smk", TRUE);
 	mainmenu_refresh_music();
 }
 void mainmenu_change_name(int arg1, int arg2, int arg3, int arg4, char *name_1, char *name_2)
@@ -165,22 +163,17 @@ void mainmenu_loop()
 			break;
 		case MAINMENU_ATTRACT_MODE:
 		case MAINMENU_REPLAY_INTRO:
-#ifndef HELLFIRE
-			if (gbIsSpawn)
+			if (gbIsSpawn && !gbIsHellfire)
 				done = FALSE;
-			else
-#endif
-			    if (gbActive)
+			else if (gbActive)
 				mainmenu_play_intro();
 			break;
 		case MAINMENU_SHOW_CREDITS:
 			UiCreditsDialog(16);
 			break;
-#ifdef HELLFIRE
 		case MAINMENU_SHOW_SUPPORT:
 			//UiSupportDialog(16);
 			break;
-#endif
 		case MAINMENU_EXIT_DIABLO:
 			done = TRUE;
 			break;

@@ -15,17 +15,10 @@ bool allquests;
 SDL_Window *ghMainWnd;
 DWORD glSeedTbl[NUMLEVELS];
 int gnLevelTypeTbl[NUMLEVELS];
-#ifndef HELLFIRE
 int glEndSeed[NUMLEVELS];
 int glMid1Seed[NUMLEVELS];
 int glMid2Seed[NUMLEVELS];
 int glMid3Seed[NUMLEVELS];
-#else
-int glEndSeed[NUMLEVELS + 1];
-int glMid1Seed[NUMLEVELS + 1];
-int glMid2Seed[NUMLEVELS + 1];
-int glMid3Seed[NUMLEVELS + 1];
-#endif
 int MouseX;
 int MouseY;
 BOOL gbGameLoopStartup;
@@ -411,7 +404,7 @@ BOOL StartGame(BOOL bNewGame, BOOL bSinglePlayer)
 		}
 		run_game_loop(uMsg);
 		NetClose();
-		pfile_create_player_description(0, 0);
+		pfile_create_player_description(NULL, 0);
 	} while (gbRunGameResult);
 
 	SNetDestroy();
@@ -1304,11 +1297,6 @@ static void PressChar(WPARAM vkey)
 			GiveGoldCheat();
 		}
 		return;
-	case '~':
-		if (currlevel == 0 && debug_mode_key_w) {
-			StoresCheat();
-		}
-		return;
 #endif
 	}
 }
@@ -1456,15 +1444,15 @@ void LoadLvlGFX()
 
 	switch (leveltype) {
 	case DTYPE_TOWN:
-#ifdef HELLFIRE
-		pDungeonCels = LoadFileInMem("NLevels\\TownData\\Town.CEL", NULL);
-		pMegaTiles = LoadFileInMem("NLevels\\TownData\\Town.TIL", NULL);
-		pLevelPieces = LoadFileInMem("NLevels\\TownData\\Town.MIN", NULL);
-#else
-		pDungeonCels = LoadFileInMem("Levels\\TownData\\Town.CEL", NULL);
-		pMegaTiles = LoadFileInMem("Levels\\TownData\\Town.TIL", NULL);
-		pLevelPieces = LoadFileInMem("Levels\\TownData\\Town.MIN", NULL);
-#endif
+		if (gbIsHellfire) {
+			pDungeonCels = LoadFileInMem("NLevels\\TownData\\Town.CEL", NULL);
+			pMegaTiles = LoadFileInMem("NLevels\\TownData\\Town.TIL", NULL);
+			pLevelPieces = LoadFileInMem("NLevels\\TownData\\Town.MIN", NULL);
+		} else {
+			pDungeonCels = LoadFileInMem("Levels\\TownData\\Town.CEL", NULL);
+			pMegaTiles = LoadFileInMem("Levels\\TownData\\Town.TIL", NULL);
+			pLevelPieces = LoadFileInMem("Levels\\TownData\\Town.MIN", NULL);
+		}
 		pSpecialCels = LoadFileInMem("Levels\\TownData\\TownS.CEL", NULL);
 		break;
 	case DTYPE_CATHEDRAL:
@@ -1793,14 +1781,10 @@ void LoadGameLevel(BOOL firstflag, int lvldir)
 		}
 	}
 
-#ifdef HELLFIRE
 	if (currlevel >= 17)
 		music_start(currlevel > 20 ? TMUSIC_L5 : TMUSIC_L6);
 	else
 		music_start(leveltype);
-#else
-	music_start(leveltype);
-#endif
 
 	while (!IncProgress())
 		;
