@@ -596,10 +596,8 @@ BOOL MonsterMHit(int pnum, int m, int mindam, int maxdam, int dist, int t, BOOLE
 	    || mor & RESIST_LIGHTNING && mir == MISR_LIGHTNING)
 		resist = TRUE;
 
-#ifdef HELLFIRE
-	if (t == MIS_HBOLT && (monster[m].MType->mtype == MT_DIABLO || monster[m].MType->mtype == MT_BONEDEMN))
+	if (gbIsHellfire && t == MIS_HBOLT && (monster[m].MType->mtype == MT_DIABLO || monster[m].MType->mtype == MT_BONEDEMN))
 		resist = TRUE;
-#endif
 
 	hit = random_(69, 100);
 #ifdef HELLFIRE
@@ -1259,8 +1257,8 @@ void InitMissileGFX()
 	int mi;
 
 	for (mi = 0; misfiledata[mi].mAnimFAmt; mi++) {
-        if (!gbIsHellfire && mi > MFILE_SCBSEXPD)
-            break;
+		if (!gbIsHellfire && mi > MFILE_SCBSEXPD)
+			break;
 		if (!(misfiledata[mi].mFlags & MFLAG_HIDDEN))
 			LoadMissileGFX(mi);
 	}
@@ -1361,9 +1359,7 @@ void InitMissiles()
 			dFlags[i][j] &= ~BFLAG_MISSILE;
 		}
 	}
-#ifdef HELLFIRE
-	plr[myplr].wReflection = FALSE;
-#endif
+	plr[myplr].wReflections = 0;
 }
 
 void missiles_hive_explosion(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, int id, int dam)
@@ -1503,7 +1499,7 @@ void missiles_reflection(int mi, int sx, int sy, int dx, int dy, int midir, char
 			lvl = missile[mi]._mispllvl;
 		else
 			lvl = 2;
-		plr[id].wReflection += lvl * plr[id]._pLevel;
+		plr[id].wReflections += lvl * plr[id]._pLevel;
 		UseMana(id, SPL_REFLECT);
 	}
 	missile[mi]._mirange = 0;
@@ -2432,16 +2428,6 @@ void AddMisexp(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, 
 
 	if (mienemy && id > 0) {
 		mon = monster[id].MType;
-#ifndef HELLFIRE
-		if (mon->mtype == MT_SUCCUBUS)
-			SetMissAnim(mi, MFILE_FLAREEXP);
-		if (mon->mtype == MT_SNOWWICH)
-			SetMissAnim(mi, MFILE_SCBSEXPB);
-		if (mon->mtype == MT_HLSPWN)
-			SetMissAnim(mi, MFILE_SCBSEXPD);
-		if (mon->mtype == MT_SOLBRNR)
-			SetMissAnim(mi, MFILE_SCBSEXPC);
-#else
 		switch (mon->mtype) {
 		case MT_SUCCUBUS:
 			SetMissAnim(mi, MFILE_FLAREEXP);
@@ -2456,7 +2442,6 @@ void AddMisexp(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, 
 			SetMissAnim(mi, MFILE_SCBSEXPC);
 			break;
 		}
-#endif
 	}
 
 	missile[mi]._mix = missile[dx]._mix;
@@ -4285,7 +4270,7 @@ void mi_reflect(int i)
 	}
 	if (src != myplr && currlevel != plr[src].plrlevel)
 		missile[i]._miDelFlag = TRUE;
-	if ((WORD)plr[src].wReflection <= 0) {
+	if (plr[src].wReflections <= 0) {
 		missile[i]._miDelFlag = TRUE;
 		NetSendCmd(TRUE, CMD_REFLECT);
 	}
@@ -4986,7 +4971,7 @@ void MI_Misexp(int i)
 #ifdef HELLFIRE
 	int ExpLight[] = { 9, 10, 11, 12, 11, 10, 8, 6, 4, 2, 1, 0, 0, 0, 0 };
 #else
-	int ExpLight[10] = { 9, 10, 11, 12, 11, 10, 8, 6, 4, 2 };
+	int ExpLight[] = { 9, 10, 11, 12, 11, 10, 8, 6, 4, 2 };
 #endif
 
 	missile[i]._mirange--;
