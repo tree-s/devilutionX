@@ -153,6 +153,9 @@ BOOL SFileOpenFile(const char *filename, HANDLE *phFile)
 		result = SFileOpenFileEx((HANDLE)0, path.c_str(), 0xFFFFFFFF, phFile);
 	}
 
+	if (!result) {
+		result = SFileOpenFileEx((HANDLE)devilutionx_mpq, filename, 0, phFile);
+	}
 	if (gbIsHellfire) {
 		if (!result) {
 			result = SFileOpenFileEx((HANDLE)hfopt2_mpq, filename, 0, phFile);
@@ -182,7 +185,10 @@ BOOL SFileOpenFile(const char *filename, HANDLE *phFile)
 	if (!result && patch_rt_mpq) {
 		result = SFileOpenFileEx((HANDLE)patch_rt_mpq, filename, 0, phFile);
 	}
-	if (!result) {
+	if (!result && spawn_mpq) {
+		result = SFileOpenFileEx((HANDLE)spawn_mpq, filename, 0, phFile);
+	}
+	if (!result && diabdat_mpq) {
 		result = SFileOpenFileEx((HANDLE)diabdat_mpq, filename, 0, phFile);
 	}
 
@@ -258,10 +264,10 @@ BOOL SBmpLoadImage(const char *pszFileName, SDL_Color *pPalette, BYTE *pBuffer, 
 		*pdwBpp = pcxhdr.BitsPerPixel;
 
 	if (!pBuffer) {
-		SFileSetFilePointer(hFile, 0, 0, 2);
+		SFileSetFilePointer(hFile, 0, 0, DVL_FILE_END);
 		fileBuffer = NULL;
 	} else {
-		size = SFileGetFileSize(hFile, 0) - SFileSetFilePointer(hFile, 0, 0, 1);
+		size = SFileGetFileSize(hFile, 0) - SFileSetFilePointer(hFile, 0, 0, DVL_FILE_CURRENT);
 		fileBuffer = (BYTE *)malloc(size);
 	}
 

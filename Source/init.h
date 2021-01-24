@@ -16,6 +16,7 @@ extern _SNETVERSIONDATA fileinfo;
 extern int gbActive;
 extern HANDLE hellfire_mpq;
 extern WNDPROC CurrentProc;
+extern HANDLE spawn_mpq;
 extern HANDLE diabdat_mpq;
 extern bool gbIsSpawn;
 extern bool gbIsHellfire;
@@ -27,6 +28,7 @@ extern HANDLE hfmusic_mpq;
 extern HANDLE hfvoice_mpq;
 extern HANDLE hfopt1_mpq;
 extern HANDLE hfopt2_mpq;
+extern HANDLE devilutionx_mpq;
 
 void init_cleanup();
 void init_archives();

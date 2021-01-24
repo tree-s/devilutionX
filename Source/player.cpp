@@ -4,6 +4,7 @@
  * Implementation of player functionality, leveling, actions, creation, loading, etc.
  */
 #include "all.h"
+#include "../3rdParty/Storm/Source/storm.h"
 
 DEVILUTION_BEGIN_NAMESPACE
 
@@ -204,7 +205,7 @@ int ExpLvlsTbl[MAXCHARLEVEL] = {
 	1310707109,
 	1583495809
 };
-const char *const ClassStrTbl[NUM_CLASSES] = {
+const char *const ClassStrTbl[] = {
 	"Warrior",
 	"Rogue",
 	"Sorceror",
@@ -388,10 +389,10 @@ static DWORD GetPlrGFXSize(const char *szCel)
 					sprintf(Type, "%c%c%c", CharCharHF[c], *a, *w);
 					sprintf(pszName, "PlrGFX\\%s\\%s\\%s%s.CL2", ClassStrTblOld[c], Type, Type, szCel);
 				}
-				if (WOpenFile(pszName, &hsFile, TRUE)) {
+				if (SFileOpenFile(pszName, &hsFile)) {
 					/// ASSERT: assert(hsFile);
-					dwSize = WGetFileSize(hsFile, NULL, pszName);
-					WCloseFile(hsFile);
+					dwSize = SFileGetFileSize(hsFile, NULL);
+					SFileCloseFile(hsFile);
 					if (dwMaxSize <= dwSize) {
 						dwMaxSize = dwSize;
 					}
@@ -687,9 +688,7 @@ void CreatePlayer(int pnum, char c)
 	int hp, mana;
 	int i;
 
-#ifdef HELLFIRE
 	memset(&plr[pnum], 0, sizeof(PlayerStruct));
-#endif
 	ClearPlrRVars(&plr[pnum]);
 	SetRndSeed(SDL_GetTicks());
 
@@ -883,9 +882,7 @@ void NextPlrLevel(int pnum)
 	plr[pnum]._pLevel++;
 	plr[pnum]._pMaxLvl++;
 
-#ifdef HELLFIRE
 	CalcPlrInv(pnum, TRUE);
-#endif
 
 	if (CalcStatDiff(pnum) < 5) {
 		plr[pnum]._pStatPts = CalcStatDiff(pnum);
@@ -927,10 +924,7 @@ void NextPlrLevel(int pnum)
 	}
 
 	if (pnum == myplr) {
-#ifdef HELLFIRE
-		if (plr[pnum]._pMana > 0)
-#endif
-			drawmanaflag = TRUE;
+		drawmanaflag = TRUE;
 	}
 
 	if (sgbControllerActive)
@@ -1344,12 +1338,10 @@ void PM_ChangeOffset(int pnum)
 	plr[pnum]._pVar6 += plr[pnum]._pxvel;
 	plr[pnum]._pVar7 += plr[pnum]._pyvel;
 
-#ifdef HELLFIRE
-	if (currlevel == 0 && jogging_opt) {
+	if (gbIsHellfire && currlevel == 0 && jogging_opt) {
 		plr[pnum]._pVar6 += plr[pnum]._pxvel;
 		plr[pnum]._pVar7 += plr[pnum]._pyvel;
 	}
-#endif
 
 	plr[pnum]._pxoff = plr[pnum]._pVar6 >> 8;
 	plr[pnum]._pyoff = plr[pnum]._pVar7 >> 8;
@@ -1365,6 +1357,9 @@ void PM_ChangeOffset(int pnum)
 	PM_ChangeLightOff(pnum);
 }
 
+/**
+ * @brief Starting a move action towards NW, N, or NE
+ */
 void StartWalk(int pnum, int xvel, int yvel, int xadd, int yadd, int EndDir, int sdir)
 {
 	int px, py;
@@ -1433,6 +1428,9 @@ void StartWalk(int pnum, int xvel, int yvel, int xadd, int yadd, int EndDir, int
 	}
 }
 
+/**
+ * @brief Starting a move action towards SW, S, or SE
+ */
 #if defined(__clang__) || defined(__GNUC__)
 __attribute__((no_sanitize("shift-base")))
 #endif
@@ -1469,10 +1467,10 @@ StartWalk2(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int yadd,
 	dPlayer[plr[pnum]._px][plr[pnum]._py] = -1 - pnum;
 	plr[pnum]._pVar1 = plr[pnum]._px;
 	plr[pnum]._pVar2 = plr[pnum]._py;
-	plr[pnum]._px = px;
+	plr[pnum]._px = px; // Move player to the next tile to maintain correct render order
 	plr[pnum]._py = py;
 	dPlayer[plr[pnum]._px][plr[pnum]._py] = pnum + 1;
-	plr[pnum]._pxoff = xoff;
+	plr[pnum]._pxoff = xoff; // Offset player sprite to align with their previous tile position
 	plr[pnum]._pyoff = yoff;
 
 	ChangeLightXY(plr[pnum]._plid, plr[pnum]._px, plr[pnum]._py);
@@ -1510,6 +1508,9 @@ StartWalk2(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int yadd,
 	}
 }
 
+/**
+ * @brief Starting a move action towards W or E
+ */
 #if defined(__clang__) || defined(__GNUC__)
 __attribute__((no_sanitize("shift-base")))
 #endif
@@ -1550,7 +1551,7 @@ StartWalk3(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int yadd,
 	plr[pnum]._pVar4 = x;
 	plr[pnum]._pVar5 = y;
 	dFlags[x][y] |= BFLAG_PLAYERLR;
-	plr[pnum]._pxoff = xoff;
+	plr[pnum]._pxoff = xoff; // Offset player sprite to align with their previous tile position
 	plr[pnum]._pyoff = yoff;
 
 	if (leveltype != DTYPE_TOWN) {
@@ -1797,7 +1798,6 @@ void StartPlrHit(int pnum, int dam, BOOL forcehit)
 
 	plr[pnum]._pmode = PM_GOTHIT;
 	FixPlayerLocation(pnum, pd);
-	plr[pnum]._pVar8 = 1;
 	FixPlrWalkTags(pnum);
 	dPlayer[plr[pnum]._px][plr[pnum]._py] = pnum + 1;
 	SetPlayerOld(pnum);
@@ -2300,6 +2300,9 @@ BOOL PM_DoStand(int pnum)
 	return FALSE;
 }
 
+/**
+ * @brief Movement towards NW, N, and NE
+ */
 BOOL PM_DoWalk(int pnum)
 {
 	int anim_len;
@@ -2309,14 +2312,14 @@ BOOL PM_DoWalk(int pnum)
 		app_fatal("PM_DoWalk: illegal player %d", pnum);
 	}
 
-#ifndef HELLFIRE
-	if (plr[pnum]._pAnimFrame == 3
-	    || (plr[pnum]._pWFrames == 8 && plr[pnum]._pAnimFrame == 7)
-	    || (plr[pnum]._pWFrames != 8 && plr[pnum]._pAnimFrame == 4)) {
-		PlaySfxLoc(PS_WALK1, plr[pnum]._px, plr[pnum]._py);
+	if (!gbIsHellfire) {
+		if (plr[pnum]._pAnimFrame == 3
+		    || (plr[pnum]._pWFrames == 8 && plr[pnum]._pAnimFrame == 7)
+		    || (plr[pnum]._pWFrames != 8 && plr[pnum]._pAnimFrame == 4)) {
+			PlaySfxLoc(PS_WALK1, plr[pnum]._px, plr[pnum]._py);
+		}
 	}
-#else
-	if (currlevel == 0 && jogging_opt) {
+	if (gbIsHellfire && currlevel == 0 && jogging_opt) {
 		if (plr[pnum]._pAnimFrame % 2 == 0) {
 			plr[pnum]._pAnimFrame++;
 			plr[pnum]._pVar8++;
@@ -2325,7 +2328,6 @@ BOOL PM_DoWalk(int pnum)
 			plr[pnum]._pAnimFrame = 0;
 		}
 	}
-#endif
 
 	anim_len = 8;
 	if (currlevel != 0) {
@@ -2368,6 +2370,9 @@ BOOL PM_DoWalk(int pnum)
 	return rv;
 }
 
+/**
+ * @brief Movement towards SW, S, and SE
+ */
 BOOL PM_DoWalk2(int pnum)
 {
 	int anim_len;
@@ -2377,14 +2382,14 @@ BOOL PM_DoWalk2(int pnum)
 		app_fatal("PM_DoWalk2: illegal player %d", pnum);
 	}
 
-#ifndef HELLFIRE
-	if (plr[pnum]._pAnimFrame == 3
-	    || (plr[pnum]._pWFrames == 8 && plr[pnum]._pAnimFrame == 7)
-	    || (plr[pnum]._pWFrames != 8 && plr[pnum]._pAnimFrame == 4)) {
-		PlaySfxLoc(PS_WALK1, plr[pnum]._px, plr[pnum]._py);
+	if (!gbIsHellfire) {
+		if (plr[pnum]._pAnimFrame == 3
+		    || (plr[pnum]._pWFrames == 8 && plr[pnum]._pAnimFrame == 7)
+		    || (plr[pnum]._pWFrames != 8 && plr[pnum]._pAnimFrame == 4)) {
+			PlaySfxLoc(PS_WALK1, plr[pnum]._px, plr[pnum]._py);
+		}
 	}
-#else
-	if (currlevel == 0 && jogging_opt) {
+	if (gbIsHellfire && currlevel == 0 && jogging_opt) {
 		if (plr[pnum]._pAnimFrame % 2 == 0) {
 			plr[pnum]._pAnimFrame++;
 			plr[pnum]._pVar8++;
@@ -2393,7 +2398,6 @@ BOOL PM_DoWalk2(int pnum)
 			plr[pnum]._pAnimFrame = 0;
 		}
 	}
-#endif
 
 	anim_len = 8;
 	if (currlevel != 0) {
@@ -2432,6 +2436,9 @@ BOOL PM_DoWalk2(int pnum)
 	return rv;
 }
 
+/**
+ * @brief Movement towards W and E
+ */
 BOOL PM_DoWalk3(int pnum)
 {
 	int anim_len;
@@ -2441,14 +2448,14 @@ BOOL PM_DoWalk3(int pnum)
 		app_fatal("PM_DoWalk3: illegal player %d", pnum);
 	}
 
-#ifndef HELLFIRE
-	if (plr[pnum]._pAnimFrame == 3
-	    || (plr[pnum]._pWFrames == 8 && plr[pnum]._pAnimFrame == 7)
-	    || (plr[pnum]._pWFrames != 8 && plr[pnum]._pAnimFrame == 4)) {
-		PlaySfxLoc(PS_WALK1, plr[pnum]._px, plr[pnum]._py);
+	if (!gbIsHellfire) {
+		if (plr[pnum]._pAnimFrame == 3
+		    || (plr[pnum]._pWFrames == 8 && plr[pnum]._pAnimFrame == 7)
+		    || (plr[pnum]._pWFrames != 8 && plr[pnum]._pAnimFrame == 4)) {
+			PlaySfxLoc(PS_WALK1, plr[pnum]._px, plr[pnum]._py);
+		}
 	}
-#else
-	if (currlevel == 0 && jogging_opt) {
+	if (gbIsHellfire && currlevel == 0 && jogging_opt) {
 		if (plr[pnum]._pAnimFrame % 2 == 0) {
 			plr[pnum]._pAnimFrame++;
 			plr[pnum]._pVar8++;
@@ -2457,7 +2464,6 @@ BOOL PM_DoWalk3(int pnum)
 			plr[pnum]._pAnimFrame = 0;
 		}
 	}
-#endif
 
 	anim_len = 8;
 	if (currlevel != 0) {
@@ -2501,36 +2507,32 @@ BOOL PM_DoWalk3(int pnum)
 	return rv;
 }
 
+static bool WeaponDurDecay(int pnum, int ii)
+{
+	if (plr[pnum].InvBody[ii]._itype != ITYPE_NONE && plr[pnum].InvBody[ii]._iClass == ICLASS_WEAPON && plr[pnum].InvBody[ii]._iDamAcFlags & 2) {
+		plr[pnum].InvBody[ii]._iPLDam -= 5;
+		if (plr[pnum].InvBody[ii]._iPLDam <= -100) {
+			NetSendCmdDelItem(TRUE, ii);
+			plr[pnum].InvBody[ii]._itype = ITYPE_NONE;
+			CalcPlrInv(pnum, TRUE);
+			return true;
+		}
+		CalcPlrInv(pnum, TRUE);
+	}
+	return false;
+}
+
 BOOL WeaponDur(int pnum, int durrnd)
 {
 	if (pnum != myplr) {
 		return FALSE;
 	}
 
-#ifdef HELLFIRE
-	if (plr[pnum].InvBody[INVLOC_HAND_LEFT]._itype != ITYPE_NONE && plr[pnum].InvBody[INVLOC_HAND_LEFT]._iClass == ICLASS_WEAPON && plr[pnum].InvBody[INVLOC_HAND_LEFT]._iDamAcFlags & 2) {
-		plr[pnum].InvBody[INVLOC_HAND_LEFT]._iPLDam -= 5;
-		if (plr[pnum].InvBody[INVLOC_HAND_LEFT]._iPLDam <= -100) {
-			NetSendCmdDelItem(TRUE, INVLOC_HAND_LEFT);
-			plr[pnum].InvBody[INVLOC_HAND_LEFT]._itype = ITYPE_NONE;
-			CalcPlrInv(pnum, TRUE);
-			return TRUE;
-		}
-		CalcPlrInv(pnum, TRUE);
-	}
+	if (WeaponDurDecay(pnum, INVLOC_HAND_LEFT))
+		return TRUE;
+	if (WeaponDurDecay(pnum, INVLOC_HAND_RIGHT))
+		return TRUE;
 
-	if (plr[pnum].InvBody[INVLOC_HAND_RIGHT]._itype != ITYPE_NONE && plr[pnum].InvBody[INVLOC_HAND_RIGHT]._iClass == ICLASS_WEAPON && plr[pnum].InvBody[INVLOC_HAND_RIGHT]._iDamAcFlags & 2) {
-		plr[pnum].InvBody[INVLOC_HAND_RIGHT]._iPLDam -= 5;
-		if (plr[pnum].InvBody[INVLOC_HAND_RIGHT]._iPLDam <= -100) {
-			NetSendCmdDelItem(TRUE, INVLOC_HAND_LEFT); // BUGFIX: INVLOC_HAND_RIGHT
-			plr[pnum].InvBody[INVLOC_HAND_RIGHT]._itype = ITYPE_NONE;
-			CalcPlrInv(pnum, TRUE);
-			return TRUE;
-		}
-		CalcPlrInv(pnum, TRUE);
-	}
-
-#endif
 	if (random_(3, durrnd) != 0) {
 		return FALSE;
 	}
@@ -2680,12 +2682,10 @@ BOOL PlrHitMonst(int pnum, int m)
 #else
 	if (hit < hper) {
 #endif
-#ifdef HELLFIRE
 		if (plr[pnum]._pIFlags & ISPL_FIREDAM && plr[pnum]._pIFlags & ISPL_LIGHTDAM) {
 			int midam = plr[pnum]._pIFMinDam + random_(3, plr[pnum]._pIFMaxDam - plr[pnum]._pIFMinDam);
 			AddMissile(plr[pnum]._px, plr[pnum]._py, plr[pnum]._pVar1, plr[pnum]._pVar2, plr[pnum]._pdir, MIS_SPECARROW, TARGET_MONSTERS, pnum, midam, 0);
 		}
-#endif
 		mind = plr[pnum]._pIMinDam;
 		maxd = plr[pnum]._pIMaxDam;
 		dam = random_(5, maxd - mind + 1) + mind;
@@ -2998,18 +2998,13 @@ BOOL PM_DoAttack(int pnum)
 			}
 		}
 
-#ifdef HELLFIRE
-		if (!(plr[pnum]._pIFlags & ISPL_FIREDAM) || !(plr[pnum]._pIFlags & ISPL_LIGHTDAM))
-#endif
+		if (!(plr[pnum]._pIFlags & ISPL_FIREDAM) || !(plr[pnum]._pIFlags & ISPL_LIGHTDAM)) {
 			if (plr[pnum]._pIFlags & ISPL_FIREDAM) {
 				AddMissile(dx, dy, 1, 0, 0, MIS_WEAPEXP, TARGET_MONSTERS, pnum, 0, 0);
-			}
-#ifdef HELLFIRE
-			else
-#endif
-			    if (plr[pnum]._pIFlags & ISPL_LIGHTDAM) {
+			} else if (plr[pnum]._pIFlags & ISPL_LIGHTDAM) {
 				AddMissile(dx, dy, 2, 0, 0, MIS_WEAPEXP, TARGET_MONSTERS, pnum, 0, 0);
 			}
+		}
 
 		if (dMonster[dx][dy]) {
 			m = dMonster[dx][dy];
@@ -3282,35 +3277,19 @@ BOOL PM_DoGotHit(int pnum)
 		app_fatal("PM_DoGotHit: illegal player %d", pnum);
 	}
 
-#ifdef HELLFIRE
-	if (plr[pnum]._pIFlags & (ISPL_FASTRECOVER | ISPL_FASTERRECOVER | ISPL_FASTESTRECOVER)) {
-		frame = 3;
-		if (plr[pnum]._pIFlags & ISPL_FASTERRECOVER)
-			frame = 4;
-		if (plr[pnum]._pIFlags & ISPL_FASTESTRECOVER)
-			frame = 5;
-		if (plr[pnum]._pVar8 > 1 && plr[pnum]._pVar8 < frame) {
-			plr[pnum]._pVar8 = frame;
-		}
-		if (plr[pnum]._pVar8 > plr[pnum]._pHFrames)
-			plr[pnum]._pVar8 = plr[pnum]._pHFrames;
-	}
-
-	if (plr[pnum]._pVar8 == plr[pnum]._pHFrames) {
-#else
 	frame = plr[pnum]._pAnimFrame;
 	if (plr[pnum]._pIFlags & ISPL_FASTRECOVER && frame == 3) {
 		plr[pnum]._pAnimFrame++;
 	}
 	if (plr[pnum]._pIFlags & ISPL_FASTERRECOVER && (frame == 3 || frame == 5)) {
-		plr[pnum]._pAnimFrame++;
+		if (!gbIsHellfire || !(plr[pnum]._pIFlags & ISPL_FASTESTRECOVER))
+			plr[pnum]._pAnimFrame++;
 	}
 	if (plr[pnum]._pIFlags & ISPL_FASTESTRECOVER && (frame == 1 || frame == 3 || frame == 5)) {
 		plr[pnum]._pAnimFrame++;
 	}
 
 	if (plr[pnum]._pAnimFrame >= plr[pnum]._pHFrames) {
-#endif
 		StartStand(pnum, plr[pnum]._pdir);
 		ClearPlrPVars(pnum);
 		if (random_(3, 4) != 0) {
@@ -3320,9 +3299,6 @@ BOOL PM_DoGotHit(int pnum)
 		return TRUE;
 	}
 
-#ifdef HELLFIRE
-	plr[pnum]._pVar8++;
-#endif
 	return FALSE;
 }
 
@@ -4093,11 +4069,7 @@ void CheckPlrSpell()
 	}
 
 	if (addflag) {
-		if (plr[myplr]._pRSpell == SPL_FIREWALL
-#ifdef HELLFIRE
-		    || plr[myplr]._pRSpell == SPL_LIGHTWALL
-#endif
-		) {
+		if (plr[myplr]._pRSpell == SPL_FIREWALL || plr[myplr]._pRSpell == SPL_LIGHTWALL) {
 			sd = GetDirection(plr[myplr]._px, plr[myplr]._py, cursmx, cursmy);
 			sl = GetSpellLevel(myplr, plr[myplr]._pRSpell);
 			NetSendCmdLocParam3(TRUE, CMD_SPELLXYD, cursmx, cursmy, plr[myplr]._pRSpell, sd, sl);

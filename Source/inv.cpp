@@ -713,11 +713,7 @@ BOOL GoldAutoPlace(int pnum)
 	for (int i = 0; i < plr[pnum]._pNumInv && !done; i++) {
 		if (plr[pnum].InvList[i]._itype == ITYPE_GOLD) {
 			int gold = plr[pnum].InvList[i]._ivalue + plr[pnum].HoldItem._ivalue;
-#ifdef HELLFIRE
 			if (gold <= MaxGold) {
-#else
-			if (plr[pnum].HoldItem._ivalue + plr[pnum].InvList[i]._ivalue <= GOLD_MAX_LIMIT) {
-#endif
 				plr[pnum].InvList[i]._ivalue = gold;
 				if (gold >= GOLD_MEDIUM_LIMIT)
 					plr[pnum].InvList[i]._iCurs = ICURS_GOLD_LARGE;
@@ -1066,12 +1062,8 @@ void CheckInvPaste(int pnum, int mx, int my)
 				cn = SwapItem(&plr[pnum].InvBody[INVLOC_HAND_LEFT], &plr[pnum].HoldItem);
 				break;
 			}
-#ifdef HELLFIRE
-			NetSendCmdChItem(FALSE, INVLOC_HAND_LEFT);
-#else
 			NetSendCmdDelItem(FALSE, INVLOC_HAND_LEFT);
 			NetSendCmdChItem(FALSE, INVLOC_HAND_RIGHT);
-#endif
 			SwapItem(&plr[pnum].InvBody[INVLOC_HAND_RIGHT], &plr[pnum].InvBody[INVLOC_HAND_LEFT]);
 			cn = SwapItem(&plr[pnum].InvBody[INVLOC_HAND_RIGHT], &plr[pnum].HoldItem);
 			break;
@@ -1769,10 +1761,8 @@ void InvGetItem(int pnum, int ii)
 		CheckBookLevel(pnum);
 		CheckItemStats(pnum);
 		cursor_updated = FALSE;
-#ifdef HELLFIRE
-		if (plr[pnum].HoldItem._itype == ITYPE_GOLD && GoldAutoPlace(pnum))
+		if (gbIsHellfire && plr[pnum].HoldItem._itype == ITYPE_GOLD && GoldAutoPlace(pnum))
 			cursor_updated = TRUE;
-#endif
 		dItem[item[ii]._ix][item[ii]._iy] = 0;
 		if (currlevel == 21 && item[ii]._ix == CornerStone.x && item[ii]._iy == CornerStone.y) {
 			CornerStone.item.IDidx = -1;
@@ -1957,9 +1947,6 @@ void AutoGetItem(int pnum, int ii)
 		RespawnItem(ii, TRUE);
 		NetSendCmdPItem(TRUE, CMD_RESPAWNITEM, item[ii]._ix, item[ii]._iy);
 		plr[pnum].HoldItem._itype = ITYPE_NONE;
-#ifdef HELLFIRE
-		NewCursor(CURSOR_HAND);
-#endif
 	}
 }
 
@@ -2398,11 +2385,7 @@ void RemoveScroll(int pnum)
 	for (i = 0; i < plr[pnum]._pNumInv; i++) {
 		if (plr[pnum].InvList[i]._itype != ITYPE_NONE
 		    && (plr[pnum].InvList[i]._iMiscId == IMISC_SCROLL || plr[pnum].InvList[i]._iMiscId == IMISC_SCROLLT)
-#ifndef HELLFIRE
 		    && plr[pnum].InvList[i]._iSpell == plr[pnum]._pRSpell) {
-#else
-		    && plr[pnum].InvList[i]._iSpell == plr[pnum]._pSpell) {
-#endif
 			RemoveInvItem(pnum, i);
 			CalcPlrScrolls(pnum);
 			return;
@@ -2411,11 +2394,7 @@ void RemoveScroll(int pnum)
 	for (i = 0; i < MAXBELTITEMS; i++) {
 		if (plr[pnum].SpdList[i]._itype != ITYPE_NONE
 		    && (plr[pnum].SpdList[i]._iMiscId == IMISC_SCROLL || plr[pnum].SpdList[i]._iMiscId == IMISC_SCROLLT)
-#ifndef HELLFIRE
-		    && plr[pnum].SpdList[i]._iSpell == plr[pnum]._pRSpell) {
-#else
 		    && plr[pnum].SpdList[i]._iSpell == plr[pnum]._pSpell) {
-#endif
 			RemoveSpdBarItem(pnum, i);
 			CalcPlrScrolls(pnum);
 			return;

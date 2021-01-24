@@ -20,12 +20,16 @@ void mainmenu_refresh_music()
 {
 	music_start(menu_music_track_id);
 
+	if (gbIsSpawn && !gbIsHellfire) {
+		return;
+	}
+
 	do {
 		menu_music_track_id++;
+		if (menu_music_track_id == NUM_MUSIC || (!gbIsHellfire && menu_music_track_id > TMUSIC_L4))
+			menu_music_track_id = TMUSIC_L2;
 		if (gbIsSpawn && menu_music_track_id > TMUSIC_L1)
 			menu_music_track_id = TMUSIC_L5;
-		if (menu_music_track_id == NUM_MUSIC || (!gbIsHellfire && menu_music_track_id > TMUSIC_L4))
-			menu_music_track_id = TMUSIC_TOWN;
 	} while (menu_music_track_id == TMUSIC_TOWN || menu_music_track_id == TMUSIC_L1);
 }
 
@@ -47,11 +51,13 @@ static BOOL mainmenu_init_menu(int type)
 
 static BOOL mainmenu_single_player()
 {
-#ifdef HELLFIRE
 	if (!SRegLoadValue("Hellfire", jogging_title, 0, &jogging_opt)) {
 		jogging_opt = TRUE;
 	}
-#endif
+	if (!gbIsHellfire) {
+		jogging_opt = FALSE;
+	}
+
 	gbMaxPlayers = 1;
 
 	if (!SRegLoadValue("devilutionx", "game speed", 0, &ticks_per_sec)) {
@@ -63,6 +69,7 @@ static BOOL mainmenu_single_player()
 
 static BOOL mainmenu_multi_player()
 {
+	jogging_opt = FALSE;
 	gbMaxPlayers = MAX_PLRS;
 	return mainmenu_init_menu(SELHERO_CONNECT);
 }
