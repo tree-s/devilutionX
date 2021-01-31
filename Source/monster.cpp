@@ -1763,8 +1763,8 @@ void M2MStartHit(int mid, int i, int dam)
 	assurance((DWORD)mid < MAXMONSTERS, mid);
 	assurance(monster[mid].MType != NULL, mid);
 
-	if (i >= 0)
-		monster[i].mWhoHit |= 1 << i;
+	if (i >= 0 && i < MAX_PLRS)
+		monster[mid].mWhoHit |= 1 << i;
 
 	delta_monster_hp(mid, monster[mid]._mhitpoints, currlevel);
 	NetSendCmdMonDmg(FALSE, mid, dam);
@@ -1857,9 +1857,10 @@ void M2MStartKill(int i, int mid)
 	delta_kill_monster(mid, monster[mid]._mx, monster[mid]._my, currlevel);
 	NetSendCmdLocParam1(FALSE, CMD_MONSTDEATH, monster[mid]._mx, monster[mid]._my, mid);
 
-	monster[mid].mWhoHit |= 1 << i;
-	if (i < MAX_PLRS)
+	if (i < MAX_PLRS) {
+		monster[mid].mWhoHit |= 1 << i;
 		AddPlrMonstExper(monster[mid].mLevel, monster[mid].mExp, monster[mid].mWhoHit);
+	}
 
 	monstkills[monster[mid].MType->mtype]++;
 	monster[mid]._mhitpoints = 0;
@@ -1892,9 +1893,8 @@ void M2MStartKill(int i, int mid)
 	if (monster[mid].MType->mtype >= MT_NACID && monster[mid].MType->mtype <= MT_XACID)
 		AddMissile(monster[mid]._mx, monster[mid]._my, 0, 0, 0, MIS_ACIDPUD, TARGET_PLAYERS, mid, monster[mid]._mint + 1, 0);
 
-#ifdef HELLFIRE
-	M_StartStand(i, monster[i]._mdir);
-#endif
+	if (gbIsHellfire)
+		M_StartStand(i, monster[i]._mdir);
 }
 
 void M_StartKill(int i, int pnum)
@@ -2323,9 +2323,8 @@ void M_TryH2HHit(int i, int pnum, int Hit, int MinDam, int MaxDam)
 	}
 	if (plr[pnum]._pHitPoints >> 6 <= 0) {
 		SyncPlrKill(pnum, 0);
-#ifdef HELLFIRE
-		M_StartStand(i, monster[i]._mdir);
-#endif
+		if (gbIsHellfire)
+			M_StartStand(i, monster[i]._mdir);
 		return;
 	}
 	StartPlrHit(pnum, dam, FALSE);
@@ -2393,13 +2392,8 @@ BOOL M_DoRAttack(int i)
 				multimissiles = 1;
 			for (mi = 0; mi < multimissiles; mi++) {
 				AddMissile(
-#ifdef HELLFIRE
-				    monster[i]._mx + offset_x[monster[i]._mdir],
-				    monster[i]._my + offset_y[monster[i]._mdir],
-#else
-				    monster[i]._mx,
-				    monster[i]._my,
-#endif
+				    monster[i]._mx + (gbIsHellfire ? offset_x[monster[i]._mdir] : 0),
+				    monster[i]._my + (gbIsHellfire ? offset_y[monster[i]._mdir] : 0),
 				    monster[i]._menemyx,
 				    monster[i]._menemyy,
 				    monster[i]._mdir,
@@ -2429,13 +2423,8 @@ BOOL M_DoRSpAttack(int i)
 
 	if (monster[i]._mAnimFrame == monster[i].MData->mAFNum2 && monster[i]._mAnimCnt == 0) {
 		AddMissile(
-#ifdef HELLFIRE
-		    monster[i]._mx + offset_x[monster[i]._mdir],
-		    monster[i]._my + offset_y[monster[i]._mdir],
-#else
-		    monster[i]._mx,
-		    monster[i]._my,
-#endif
+		    monster[i]._mx + (gbIsHellfire ? offset_x[monster[i]._mdir] : 0),
+		    monster[i]._my + (gbIsHellfire ? offset_y[monster[i]._mdir] : 0),
 		    monster[i]._menemyx,
 		    monster[i]._menemyy,
 		    monster[i]._mdir,
@@ -3414,16 +3403,11 @@ void MAI_Sneak(int i)
 					Monst->_mgoalvar1 = 0;
 				}
 			}
-#ifdef HELLFIRE
 			if (Monst->_mgoal == MGOAL_RETREAT && !(Monst->_mFlags & MFLAG_NO_ENEMY)) {
-				if (Monst->_mFlags & MFLAG_TARGETS_MONSTER)
-					md = GetDirection(Monst->_mx, Monst->_my, monster[Monst->_menemy]._mx, monster[Monst->_menemy]._my);
-				else
-#else
-			if (Monst->_mgoal == MGOAL_RETREAT) {
-				if (Monst->_mFlags & MFLAG_TARGETS_MONSTER)
-#endif
-					md = GetDirection(Monst->_mx, Monst->_my, plr[Monst->_menemy]._pownerx, plr[Monst->_menemy]._pownery);
+					if (Monst->_mFlags & MFLAG_TARGETS_MONSTER)
+						md = GetDirection(Monst->_mx, Monst->_my, monster[Monst->_menemy]._mx, monster[Monst->_menemy]._my);
+					else
+						md = GetDirection(Monst->_mx, Monst->_my, plr[Monst->_menemy]._pownerx, plr[Monst->_menemy]._pownery);
 				md = opposite[md];
 				if (Monst->MType->mtype == MT_UNSEEN) {
 					if (random_(112, 2) != 0)
@@ -3860,11 +3844,8 @@ void MAI_Scav(int i)
 			}
 		}
 	}
-#ifdef HELLFIRE
-	else
-#else
+
 	if (Monst->_mmode == MM_STAND)
-#endif
 		MAI_SkelSd(i);
 }
 
@@ -4124,7 +4105,7 @@ void MAI_Golum(int i)
 				for (k = 0; k < 5; k++) {
 					_menemy = dMonster[monster[i]._mx + k - 2][monster[i]._my + j - 2];
 					if (_menemy > 0)
-						monster[_menemy]._msquelch = UCHAR_MAX; // BUGFIX: should be `monster[_menemy-1]`, not monster[_menemy].
+						monster[_menemy - 1]._msquelch = UCHAR_MAX; // BUGFIX: should be `monster[_menemy-1]`, not monster[_menemy]. (fixed)
 				}
 			}
 		}
