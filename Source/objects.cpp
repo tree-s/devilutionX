@@ -18,6 +18,7 @@ int leverid;
 int objectavail[MAXOBJECTS];
 ObjectStruct object[MAXOBJECTS];
 BOOL InitObjFlag;
+BOOL LoadMapObjsFlag;
 int numobjfiles;
 int dword_6DE0E0;
 
@@ -690,6 +691,7 @@ void LoadMapObjects(BYTE *pMap, int startx, int starty, int x1, int y1, int w, i
 	BYTE *lm;
 	long mapoff;
 
+	LoadMapObjsFlag = TRUE;
 	InitObjFlag = TRUE;
 
 	lm = pMap;
@@ -714,6 +716,7 @@ void LoadMapObjects(BYTE *pMap, int startx, int starty, int x1, int y1, int w, i
 		}
 	}
 	InitObjFlag = FALSE;
+	LoadMapObjsFlag = FALSE;
 }
 
 void LoadMapObjs(BYTE *pMap, int startx, int starty)
@@ -723,6 +726,7 @@ void LoadMapObjs(BYTE *pMap, int startx, int starty)
 	BYTE *lm;
 	long mapoff;
 
+	LoadMapObjsFlag = TRUE;
 	InitObjFlag = TRUE;
 	lm = pMap;
 	rw = *lm;
@@ -743,6 +747,7 @@ void LoadMapObjs(BYTE *pMap, int startx, int starty)
 		}
 	}
 	InitObjFlag = FALSE;
+	LoadMapObjsFlag = FALSE;
 }
 
 void AddDiabObjs()
@@ -972,7 +977,7 @@ void InitObjects()
 		AddDiabObjs();
 	} else {
 		InitObjFlag = TRUE;
-		GetRndSeed();
+		AdvanceRndSeed();
 		if (currlevel == 9 && gbMaxPlayers == 1)
 			AddSlainHero();
 		if (currlevel == quests[Q_MUSHROOM]._qlevel && quests[Q_MUSHROOM]._qactive == QUEST_INIT)
@@ -1245,7 +1250,7 @@ void AddChest(int i, int t)
 {
 	if (random_(147, 2) == 0)
 		object[i]._oAnimFrame += 3;
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 	switch (t) {
 	case OBJ_CHEST1:
 	case OBJ_TCHEST1:
@@ -1299,7 +1304,7 @@ void AddSarc(int i)
 {
 	dObject[object[i]._ox][object[i]._oy - 1] = -(i + 1);
 	object[i]._oVar1 = random_(153, 10);
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 	if (object[i]._oVar1 >= 8)
 		object[i]._oVar2 = PreSpawnSkeleton();
 }
@@ -1352,7 +1357,7 @@ void AddObjLight(int i, int r)
 void AddBarrel(int i, int t)
 {
 	object[i]._oVar1 = 0;
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 	object[i]._oVar2 = (t == OBJ_BARRELEX) ? 0 : random_(149, 10);
 	object[i]._oVar3 = random_(149, 3);
 
@@ -1395,18 +1400,18 @@ void AddShrine(int i)
 
 void AddBookcase(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 	object[i]._oPreFlag = TRUE;
 }
 
 void AddBookstand(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddBloodFtn(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddPurifyingFountain(int i)
@@ -1418,7 +1423,7 @@ void AddPurifyingFountain(int i)
 	dObject[ox][oy - 1] = -1 - i;
 	dObject[ox - 1][oy] = -1 - i;
 	dObject[ox - 1][oy - 1] = -1 - i;
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddArmorStand(int i)
@@ -1428,17 +1433,17 @@ void AddArmorStand(int i)
 		object[i]._oSelFlag = 0;
 	}
 
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddGoatShrine(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddCauldron(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddMurkyFountain(int i)
@@ -1450,17 +1455,17 @@ void AddMurkyFountain(int i)
 	dObject[ox][oy - 1] = -1 - i;
 	dObject[ox - 1][oy] = -1 - i;
 	dObject[ox - 1][oy - 1] = -1 - i;
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddTearFountain(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddDecap(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 	object[i]._oAnimFrame = random_(151, 8) + 1;
 	object[i]._oPreFlag = TRUE;
 }
@@ -1474,7 +1479,7 @@ void AddVilebook(int i)
 
 void AddMagicCircle(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 	object[i]._oPreFlag = TRUE;
 	object[i]._oVar6 = 0;
 	object[i]._oVar5 = 1;
@@ -1482,7 +1487,7 @@ void AddMagicCircle(int i)
 
 void AddBrnCross(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddPedistal(int i)
@@ -1515,12 +1520,12 @@ void AddWeaponRack(int i)
 		object[i]._oAnimFlag = 2;
 		object[i]._oSelFlag = 0;
 	}
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
 void AddTorturedBody(int i)
 {
-	object[i]._oRndSeed = GetRndSeed();
+	object[i]._oRndSeed = AdvanceRndSeed();
 	object[i]._oAnimFrame = random_(0, 4) + 1;
 	object[i]._oPreFlag = TRUE;
 }
@@ -1866,7 +1871,7 @@ void Obj_Circle(int i)
 		if (ox == 35 && oy == 36 && object[i]._oVar5 == 3) {
 			object[i]._oVar6 = 4;
 			ObjChangeMapResync(object[i]._oVar1, object[i]._oVar2, object[i]._oVar3, object[i]._oVar4);
-			if (quests[Q_BETRAYER]._qactive == QUEST_ACTIVE)
+			if (quests[Q_BETRAYER]._qactive == QUEST_ACTIVE && quests[Q_BETRAYER]._qvar1 <= 4) // BUGFIX stepping on the circle again will break the quest state (fixed)
 				quests[Q_BETRAYER]._qvar1 = 4;
 			AddMissile(plr[myplr]._px, plr[myplr]._py, 35, 46, plr[myplr]._pdir, MIS_RNDTELEPORT, TARGET_MONSTERS, myplr, 0, 0);
 			track_repeat_walk(FALSE);
@@ -3591,7 +3596,7 @@ void OperateShrine(int pnum, int i, int sType)
 			        || object[v1]._otype == OBJ_CHEST2
 			        || object[v1]._otype == OBJ_CHEST3)
 			    && object[v1]._oSelFlag == 0) {
-				object[v1]._oRndSeed = GetRndSeed();
+				object[v1]._oRndSeed = AdvanceRndSeed();
 				object[v1]._oSelFlag = 1;
 				object[v1]._oAnimFrame -= 2;
 			}
@@ -3771,7 +3776,7 @@ void OperateShrine(int pnum, int i, int sType)
 				r = 5 * leveltype + random_(160, 10 * leveltype);
 				t = plr[pnum]._pNumInv; // check
 				plr[pnum].InvList[t] = golditem;
-				plr[pnum].InvList[t]._iSeed = GetRndSeed();
+				plr[pnum].InvList[t]._iSeed = AdvanceRndSeed();
 				plr[pnum]._pNumInv++;
 				plr[pnum].InvGrid[j] = plr[pnum]._pNumInv;
 				plr[pnum].InvList[t]._ivalue = r;

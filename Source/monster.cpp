@@ -501,9 +501,9 @@ void InitMonster(int i, int rd, int mtype, int x, int y)
 	monster[i]._mDelFlag = FALSE;
 	monster[i]._uniqtype = 0;
 	monster[i]._msquelch = 0;
-	monster[i].mlid = 0;
-	monster[i]._mRndSeed = GetRndSeed();
-	monster[i]._mAISeed = GetRndSeed();
+	monster[i].mlid = NO_LIGHT; // BUGFIX monsters initial light id should be -1 (fixed)
+	monster[i]._mRndSeed = AdvanceRndSeed();
+	monster[i]._mAISeed = AdvanceRndSeed();
 	monster[i].mWhoHit = 0;
 	monster[i].mExp = monst->MData->mExp;
 	monster[i].mHit = monst->MData->mHit;
@@ -804,7 +804,7 @@ void PlaceUniqueMonst(int uniqindex, int miniontype, int bosspacksize)
 	Monst->mMagicRes = Uniq->mMagicRes;
 	Monst->mtalkmsg = Uniq->mtalkmsg;
 	if (uniqindex == UMT_HORKDMN)
-		Monst->mlid = 0;
+		Monst->mlid = NO_LIGHT; // BUGFIX monsters initial light id should be -1 (fixed)
 	else
 		Monst->mlid = AddLight(Monst->_mx, Monst->_my, 3);
 
@@ -1467,7 +1467,7 @@ void M_StartWalk2(int i, int xvel, int yvel, int xoff, int yoff, int xadd, int y
 	monster[i]._mfutx = fx;
 	monster[i]._mfuty = fy;
 	dMonster[fx][fy] = i + 1;
-	if ((!gbIsHellfire || !(monster[i]._mFlags & MFLAG_HIDDEN)) && monster[i].mlid != 0)
+	if (monster[i].mlid != NO_LIGHT)
 		ChangeLightXY(monster[i].mlid, monster[i]._mx, monster[i]._my);
 	monster[i]._mxoff = xoff;
 	monster[i]._myoff = yoff;
@@ -1489,7 +1489,7 @@ void M_StartWalk3(int i, int xvel, int yvel, int xoff, int yoff, int xadd, int y
 	int x = mapx + monster[i]._mx;
 	int y = mapy + monster[i]._my;
 
-	if ((!gbIsHellfire || !(monster[i]._mFlags & MFLAG_HIDDEN)) && monster[i].mlid != 0)
+	if (monster[i].mlid != NO_LIGHT)
 		ChangeLightXY(monster[i].mlid, x, y);
 
 	dMonster[monster[i]._mx][monster[i]._my] = -(i + 1);
@@ -2019,7 +2019,7 @@ void M_ChangeLightOffset(int monst)
 	}
 
 	_myoff *= (ly >> 3);
-	if (monster[monst].mlid)
+	if (monster[monst].mlid != NO_LIGHT)
 		ChangeLightOff(monster[monst].mlid, _mxoff, _myoff);
 }
 
@@ -2044,23 +2044,41 @@ BOOL M_DoStand(int i)
 	return FALSE;
 }
 
-BOOL M_DoWalk(int i)
+/**
+ * @brief Continue movement towards new tile
+ */
+bool M_DoWalk(int i, int variant)
 {
-	BOOL rv;
+	bool returnValue;
 
 	commitment((DWORD)i < MAXMONSTERS, i);
 	commitment(monster[i].MType != NULL, i);
 
+	//Check if we reached new tile
 	if (monster[i]._mVar8 == monster[i].MType->Anims[MA_WALK].Frames) {
-		dMonster[monster[i]._mx][monster[i]._my] = 0;
-		monster[i]._mx += monster[i]._mVar1;
-		monster[i]._my += monster[i]._mVar2;
-		dMonster[monster[i]._mx][monster[i]._my] = i + 1;
-		if ((!gbIsHellfire || !(monster[i]._mFlags & MFLAG_HIDDEN)) && monster[i].mlid != 0)
+		switch (variant) {
+		case MM_WALK:
+			dMonster[monster[i]._mx][monster[i]._my] = 0;
+			monster[i]._mx += monster[i]._mVar1;
+			monster[i]._my += monster[i]._mVar2;
+			dMonster[monster[i]._mx][monster[i]._my] = i + 1;
+			break;
+		case MM_WALK2:
+			dMonster[monster[i]._mVar1][monster[i]._mVar2] = 0;
+			break;
+		case MM_WALK3:
+			dMonster[monster[i]._mx][monster[i]._my] = 0;
+			monster[i]._mx = monster[i]._mVar1;
+			monster[i]._my = monster[i]._mVar2;
+			dFlags[monster[i]._mVar4][monster[i]._mVar5] &= ~BFLAG_MONSTLR;
+			dMonster[monster[i]._mx][monster[i]._my] = i + 1;
+			break;
+		}
+		if (monster[i].mlid != NO_LIGHT)
 			ChangeLightXY(monster[i].mlid, monster[i]._mx, monster[i]._my);
 		M_StartStand(i, monster[i]._mdir);
-		rv = TRUE;
-	} else {
+		returnValue = TRUE;
+	} else { //We didn't reach new tile so update monster's "sub-tile" position
 		if (monster[i]._mAnimCnt == 0) {
 			if (monster[i]._mVar8 == 0 && monster[i].MType->mtype == MT_FLESTHNG)
 				PlayEffect(i, 3);
@@ -2070,79 +2088,13 @@ BOOL M_DoWalk(int i)
 			monster[i]._mxoff = monster[i]._mVar6 >> 4;
 			monster[i]._myoff = monster[i]._mVar7 >> 4;
 		}
-		rv = FALSE;
+		returnValue = FALSE;
 	}
 
-	if ((!gbIsHellfire || !(monster[i]._mFlags & MFLAG_HIDDEN)) && monster[i].mlid != 0)
+	if (monster[i].mlid != NO_LIGHT) // BUGFIX: change uniqtype check to mlid check like it is in all other places (fixed)
 		M_ChangeLightOffset(i);
 
-	return rv;
-}
-
-BOOL M_DoWalk2(int i)
-{
-	BOOL rv;
-
-	commitment((DWORD)i < MAXMONSTERS, i);
-	commitment(monster[i].MType != NULL, i);
-
-	if (monster[i]._mVar8 == monster[i].MType->Anims[MA_WALK].Frames) {
-		dMonster[monster[i]._mVar1][monster[i]._mVar2] = 0;
-		if ((!gbIsHellfire || !(monster[i]._mFlags & MFLAG_HIDDEN)) && monster[i].mlid != 0)
-			ChangeLightXY(monster[i].mlid, monster[i]._mx, monster[i]._my);
-		M_StartStand(i, monster[i]._mdir);
-		rv = TRUE;
-	} else {
-		if (monster[i]._mAnimCnt == 0) {
-			if (monster[i]._mVar8 == 0 && monster[i].MType->mtype == MT_FLESTHNG)
-				PlayEffect(i, 3);
-			monster[i]._mVar8++;
-			monster[i]._mVar6 += monster[i]._mxvel;
-			monster[i]._mVar7 += monster[i]._myvel;
-			monster[i]._mxoff = monster[i]._mVar6 >> 4;
-			monster[i]._myoff = monster[i]._mVar7 >> 4;
-		}
-		rv = FALSE;
-	}
-	if ((!gbIsHellfire || !(monster[i]._mFlags & MFLAG_HIDDEN)) && monster[i].mlid != 0)
-		M_ChangeLightOffset(i);
-
-	return rv;
-}
-
-BOOL M_DoWalk3(int i)
-{
-	BOOL rv;
-
-	commitment((DWORD)i < MAXMONSTERS, i);
-	commitment(monster[i].MType != NULL, i);
-
-	if (monster[i]._mVar8 == monster[i].MType->Anims[MA_WALK].Frames) {
-		dMonster[monster[i]._mx][monster[i]._my] = 0;
-		monster[i]._mx = monster[i]._mVar1;
-		monster[i]._my = monster[i]._mVar2;
-		dFlags[monster[i]._mVar4][monster[i]._mVar5] &= ~BFLAG_MONSTLR;
-		dMonster[monster[i]._mx][monster[i]._my] = i + 1;
-		if ((!gbIsHellfire || !(monster[i]._mFlags & MFLAG_HIDDEN)) && monster[i].mlid != 0)
-			ChangeLightXY(monster[i].mlid, monster[i]._mx, monster[i]._my);
-		M_StartStand(i, monster[i]._mdir);
-		rv = TRUE;
-	} else {
-		if (monster[i]._mAnimCnt == 0) {
-			if (monster[i]._mVar8 == 0 && monster[i].MType->mtype == MT_FLESTHNG)
-				PlayEffect(i, 3);
-			monster[i]._mVar8++;
-			monster[i]._mVar6 += monster[i]._mxvel;
-			monster[i]._mVar7 += monster[i]._myvel;
-			monster[i]._mxoff = monster[i]._mVar6 >> 4;
-			monster[i]._myoff = monster[i]._mVar7 >> 4;
-		}
-		rv = FALSE;
-	}
-	if (monster[i].mlid != 0 && (!gbIsHellfire || !(monster[i]._mFlags & MFLAG_HIDDEN))) // BUGFIX: change uniqtype check to mlid check like it is in all other places (fixed)
-		M_ChangeLightOffset(i);
-
-	return rv;
+	return returnValue;
 }
 
 void M_TryM2MHit(int i, int mid, int hper, int mind, int maxd)
@@ -2548,9 +2500,10 @@ BOOL M_DoTalk(int i)
 		return FALSE;
 	InitQTextMsg(monster[i].mtalkmsg);
 	if (monster[i].mName == UniqMonst[UMT_GARBUD].mName) {
-		if (monster[i].mtalkmsg == TEXT_GARBUD1)
+		if (monster[i].mtalkmsg == TEXT_GARBUD1) {
 			quests[Q_GARBUD]._qactive = QUEST_ACTIVE;
-		quests[Q_GARBUD]._qlog = TRUE; // BUGFIX: (?) for other quests qactive and qlog go together, maybe this should actually go into the if above
+			quests[Q_GARBUD]._qlog = TRUE; // BUGFIX: (?) for other quests qactive and qlog go together, maybe this should actually go into the if above (fixed)
+		}
 		if (monster[i].mtalkmsg == TEXT_GARBUD2 && !(monster[i]._mFlags & MFLAG_QUEST_COMPLETE)) {
 			SpawnItem(i, monster[i]._mx + 1, monster[i]._my + 1, TRUE);
 			monster[i]._mFlags |= MFLAG_QUEST_COMPLETE;
@@ -3404,10 +3357,10 @@ void MAI_Sneak(int i)
 				}
 			}
 			if (Monst->_mgoal == MGOAL_RETREAT && !(Monst->_mFlags & MFLAG_NO_ENEMY)) {
-					if (Monst->_mFlags & MFLAG_TARGETS_MONSTER)
-						md = GetDirection(Monst->_mx, Monst->_my, monster[Monst->_menemy]._mx, monster[Monst->_menemy]._my);
-					else
-						md = GetDirection(Monst->_mx, Monst->_my, plr[Monst->_menemy]._pownerx, plr[Monst->_menemy]._pownery);
+				if (Monst->_mFlags & MFLAG_TARGETS_MONSTER)
+					md = GetDirection(Monst->_mx, Monst->_my, monster[Monst->_menemy]._mx, monster[Monst->_menemy]._my);
+				else
+					md = GetDirection(Monst->_mx, Monst->_my, plr[Monst->_menemy]._pownerx, plr[Monst->_menemy]._pownery);
 				md = opposite[md];
 				if (Monst->MType->mtype == MT_UNSEEN) {
 					if (random_(112, 2) != 0)
@@ -4581,6 +4534,11 @@ void MAI_Lazurus(int i)
 	}
 
 	if (Monst->_mgoal == MGOAL_NORMAL || Monst->_mgoal == MGOAL_RETREAT || Monst->_mgoal == MGOAL_MOVE) {
+		if (gbMaxPlayers == 1 && quests[Q_BETRAYER]._qvar1 == 4 && Monst->mtalkmsg == 0) { // Fix save games affected by teleport bug
+			ObjChangeMapResync(1, 18, 20, 24);
+			RedoPlayerVision();
+			quests[Q_BETRAYER]._qvar1 = 6;
+		}
 		Monst->mtalkmsg = 0;
 		MAI_Counselor(i);
 	}
@@ -4736,7 +4694,7 @@ void ProcessMonsters()
 		raflag = FALSE;
 		if (gbMaxPlayers > 1) {
 			SetRndSeed(Monst->_mAISeed);
-			Monst->_mAISeed = GetRndSeed();
+			Monst->_mAISeed = AdvanceRndSeed();
 		}
 		if (!(monster[mi]._mFlags & MFLAG_NOHEAL) && Monst->_mhitpoints < Monst->_mmaxhp && Monst->_mhitpoints >> 6 > 0) {
 			if (Monst->mLevel > 1) {
@@ -4798,13 +4756,9 @@ void ProcessMonsters()
 				raflag = M_DoStand(mi);
 				break;
 			case MM_WALK:
-				raflag = M_DoWalk(mi);
-				break;
 			case MM_WALK2:
-				raflag = M_DoWalk2(mi);
-				break;
 			case MM_WALK3:
-				raflag = M_DoWalk3(mi);
+				raflag = M_DoWalk(mi, Monst->_mmode);
 				break;
 			case MM_ATTACK:
 				raflag = M_DoAttack(mi);

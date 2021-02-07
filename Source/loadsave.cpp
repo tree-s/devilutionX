@@ -503,6 +503,8 @@ static void LoadMonster(int i)
 	CopyChar(tbuff, &pMonster->leaderflag);
 	CopyChar(tbuff, &pMonster->packsize);
 	CopyChar(tbuff, &pMonster->mlid);
+	if (pMonster->mlid == plr[myplr]._plid)
+		pMonster->mlid = NO_LIGHT; // Correct incorect values in old saves
 
 	// Omit pointer mName;
 	// Omit pointer MType;
@@ -1724,8 +1726,10 @@ void SaveLevel()
 	int dwLen;
 	BYTE *SaveBuff;
 
+	DoUnVision(plr[myplr]._px, plr[myplr]._py, plr[myplr]._pLightRad); // fix for vision staying on the level
+
 	if (currlevel == 0)
-		glSeedTbl[0] = GetRndSeed();
+		glSeedTbl[0] = AdvanceRndSeed();
 
 	dwLen = codec_get_encoded_len(FILEBUFF);
 	SaveBuff = DiabloAllocPtr(dwLen);

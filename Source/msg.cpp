@@ -480,7 +480,7 @@ void delta_leave_sync(BYTE bLevel)
 	if (gbMaxPlayers == 1)
 		return;
 	if (currlevel == 0)
-		glSeedTbl[0] = GetRndSeed();
+		glSeedTbl[0] = AdvanceRndSeed();
 	if (currlevel <= 0)
 		return;
 
@@ -2232,7 +2232,7 @@ static DWORD On_PLAYER_JOINLEVEL(TCmd *pCmd, int pnum)
 				}
 
 				plr[pnum]._pvid = AddVision(plr[pnum]._px, plr[pnum]._py, plr[pnum]._pLightRad, pnum == myplr);
-				plr[pnum]._plid = -1;
+				plr[pnum]._plid = NO_LIGHT;
 			}
 		}
 	}

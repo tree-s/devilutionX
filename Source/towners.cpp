@@ -213,7 +213,7 @@ void InitTownerInfo(int i, int w, int sel, int t, int x, int y, int ao, int tp)
 	dMonster[x][y] = i + 1;
 	towner[i]._tAnimOrder = ao;
 	towner[i]._tTenPer = tp;
-	towner[i]._tSeed = GetRndSeed();
+	towner[i]._tSeed = AdvanceRndSeed();
 }
 
 void InitQstSnds(int i)
@@ -518,6 +518,9 @@ void TownCtrlMsg(int i)
 {
 	int p;
 	int dx, dy;
+
+    if (i == -1)
+        return;
 
 	if (towner[i]._tbtcnt != 0) {
 		p = towner[i]._tVar1;
