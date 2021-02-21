@@ -17,10 +17,10 @@ BOOL MissilePreFlag;
 int numchains;
 
 /** Maps from direction to X-offset. */
-int XDirAdd[8] = { 1, 0, -1, -1, -1, 0, 1, 1 };
+const int XDirAdd[8] = { 1, 0, -1, -1, -1, 0, 1, 1 };
 /** Maps from direction to Y-offset. */
-int YDirAdd[8] = { 1, 1, 1, 0, -1, -1, -1, 0 };
-int CrawlNum[19] = { 0, 3, 12, 45, 94, 159, 240, 337, 450, 579, 724, 885, 1062, 1255, 1464, 1689, 1930, 2187, 2460 };
+const int YDirAdd[8] = { 1, 1, 1, 0, -1, -1, -1, 0 };
+const int CrawlNum[19] = { 0, 3, 12, 45, 94, 159, 240, 337, 450, 579, 724, 885, 1062, 1255, 1464, 1689, 1930, 2187, 2460 };
 
 void GetDamageAmt(int i, int *mind, int *maxd)
 {
@@ -1108,15 +1108,15 @@ void CheckMissileCol(int i, int mindam, int maxdam, BOOL shift, int mx, int my, 
 		}
 		if (dPlayer[mx][my] > 0) {
 			if (PlayerMHit(
-				dPlayer[mx][my] - 1,
-				-1,
-				missile[i]._midist,
-				mindam,
-				maxdam,
-				missile[i]._mitype,
-				shift,
-				missile[i]._miAnimType == MFILE_FIREWAL || missile[i]._miAnimType == MFILE_LGHNING,
-				&blocked)) {
+			        dPlayer[mx][my] - 1,
+			        -1,
+			        missile[i]._midist,
+			        mindam,
+			        maxdam,
+			        missile[i]._mitype,
+			        shift,
+			        missile[i]._miAnimType == MFILE_FIREWAL || missile[i]._miAnimType == MFILE_LGHNING,
+			        &blocked)) {
 				if (gbIsHellfire && blocked) {
 					dir = missile[i]._mimfnum + (random_(10, 2) ? 1 : -1);
 					mAnimFAmt = misfiledata[missile[i]._miAnimType].mAnimFAmt;
@@ -2494,7 +2494,7 @@ void AddFlash2(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, 
 		if (id != -1) {
 			missile[mi]._midam = 0;
 			for (i = 0; i <= plr[id]._pLevel; i++) {
-				missile[mi]._midam += random_(56, 2) + 1;
+				missile[mi]._midam += random_(56, 20) + 1;
 			}
 			for (i = missile[mi]._mispllvl; i > 0; i--) {
 				missile[mi]._midam += missile[mi]._midam >> 3;
@@ -2770,7 +2770,7 @@ void AddStone(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, i
 			ty = dy + CrawlTable[l];
 			if (tx > 0 && tx < MAXDUNX && ty > 0 && ty < MAXDUNY) {
 				mid = dMonster[tx][ty];
-				mid = mid > 0 ? mid - 1 : -1 - mid;
+				mid = mid > 0 ? mid - 1 : -(mid + 1);
 				if (mid > MAX_PLRS - 1 && monster[mid]._mAi != AI_DIABLO && monster[mid].MType->mtype != MT_NAKRUL) {
 					if (monster[mid]._mmode != MM_FADEIN && monster[mid]._mmode != MM_FADEOUT && monster[mid]._mmode != MM_CHARGE) {
 						j = -99;
@@ -3319,7 +3319,8 @@ void AddDiabApoca(int mi, int sx, int sy, int dx, int dy, int midir, char mienem
 {
 	int pnum;
 
-	for (pnum = 0; pnum < gbMaxPlayers; pnum++) {
+	int players = gbIsMultiplayer ? MAX_PLRS : 1;
+	for (pnum = 0; pnum < players; pnum++) {
 		if (plr[pnum].plractive) {
 			if (LineClear(sx, sy, plr[pnum]._pfutx, plr[pnum]._pfuty)) {
 				AddMissile(0, 0, plr[pnum]._pfutx, plr[pnum]._pfuty, 0, MIS_BOOM2, mienemy, id, dam, 0);
@@ -3425,7 +3426,7 @@ void MI_Dummy(int i)
 void MI_Golem(int i)
 {
 	int tx, ty, dp, l, m, src, k, tid;
-	char *ct;
+	const char *ct;
 
 	src = missile[i]._misource;
 	if (monster[src]._mx == 1 && !monster[src]._my) {
@@ -3684,7 +3685,7 @@ void MI_Lightball(int i)
 		if (obj > 0) {
 			oi = obj - 1;
 		} else {
-			oi = -1 - obj;
+			oi = -(obj + 1);
 		}
 		if (object[oi]._otype == OBJ_SHRINEL || object[oi]._otype == OBJ_SHRINER)
 			missile[i]._mirange = j;
@@ -5002,7 +5003,7 @@ void MI_Rhino(int i)
 	}
 	monster[monst]._mfutx = omx;
 	monster[monst]._moldx = omx;
-	dMonster[omx][omy] = -1 - monst;
+	dMonster[omx][omy] = -(monst + 1);
 	monster[monst]._mx = omx;
 	monster[monst]._mfuty = omy;
 	monster[monst]._moldy = omy;

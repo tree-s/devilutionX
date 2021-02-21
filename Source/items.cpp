@@ -619,7 +619,6 @@ static void items_42390F()
 void InitItems()
 {
 	int i;
-	long s;
 
 	GetItemAttrs(0, IDI_GOLD, 1);
 	golditem = item[0];
@@ -642,7 +641,7 @@ void InitItems()
 	}
 
 	if (!setlevel) {
-		s = AdvanceRndSeed(); /* unused */
+		AdvanceRndSeed(); /* unused */
 		if (QuestStatus(Q_ROCK))
 			SpawnRock();
 		if (QuestStatus(Q_ANVIL))
@@ -808,23 +807,23 @@ void CalcPlrItemVals(int p, BOOL Loadgfx)
 	}
 
 	plr[p]._pStrength = sadd + plr[p]._pBaseStr;
-	if (plr[myplr]._pStrength <= 0) {
-		plr[myplr]._pStrength = 0;
+	if (plr[p]._pStrength < 0) {
+		plr[p]._pStrength = 0;
 	}
 
 	plr[p]._pMagic = madd + plr[p]._pBaseMag;
-	if (plr[myplr]._pMagic <= 0) {
-		plr[myplr]._pMagic = 0;
+	if (plr[p]._pMagic < 0) {
+		plr[p]._pMagic = 0;
 	}
 
 	plr[p]._pDexterity = dadd + plr[p]._pBaseDex;
-	if (plr[myplr]._pDexterity <= 0) {
-		plr[myplr]._pDexterity = 0;
+	if (plr[p]._pDexterity < 0) {
+		plr[p]._pDexterity = 0;
 	}
 
 	plr[p]._pVitality = vadd + plr[p]._pBaseVit;
-	if (plr[myplr]._pVitality <= 0) {
-		plr[myplr]._pVitality = 0;
+	if (plr[p]._pVitality < 0) {
+		plr[p]._pVitality = 0;
 	}
 
 	if (plr[p]._pClass == PC_ROGUE) {
@@ -1317,14 +1316,24 @@ void SetPlrHandSeed(ItemStruct *h, int iseed)
 	h->_iSeed = iseed;
 }
 
+int GetGoldCursor(int value)
+{
+	if (value >= GOLD_MEDIUM_LIMIT)
+		return ICURS_GOLD_LARGE;
+
+	if (value <= GOLD_SMALL_LIMIT)
+		return ICURS_GOLD_SMALL;
+
+	return ICURS_GOLD_MEDIUM;
+}
+
+/**
+ * @brief Update the gold cursor on the given gold item
+ * @param h The item to update
+ */
 void SetPlrHandGoldCurs(ItemStruct *h)
 {
-	if (h->_ivalue >= GOLD_MEDIUM_LIMIT)
-		h->_iCurs = ICURS_GOLD_LARGE;
-	else if (h->_ivalue <= GOLD_SMALL_LIMIT)
-		h->_iCurs = ICURS_GOLD_SMALL;
-	else
-		h->_iCurs = ICURS_GOLD_MEDIUM;
+	h->_iCurs = GetGoldCursor(h->_ivalue);
 }
 
 void CreatePlrItems(int p)
@@ -1635,11 +1644,11 @@ void GetBookSpell(int i, int lvl)
 			bs = s;
 		}
 		s++;
-		if (gbMaxPlayers == 1) {
+		if (!gbIsMultiplayer) {
 			if (s == SPL_RESURRECT)
 				s = SPL_TELEKINESIS;
 		}
-		if (gbMaxPlayers == 1) {
+		if (!gbIsMultiplayer) {
 			if (s == SPL_HEALOTHER)
 				s = SPL_FLARE;
 		}
@@ -1744,9 +1753,9 @@ void GetStaffSpell(int i, int lvl, BOOL onlygood)
 				bs = s;
 			}
 			s++;
-			if (gbMaxPlayers == 1 && s == SPL_RESURRECT)
+			if (!gbIsMultiplayer && s == SPL_RESURRECT)
 				s = SPL_TELEKINESIS;
-			if (gbMaxPlayers == 1 && s == SPL_HEALOTHER)
+			if (!gbIsMultiplayer && s == SPL_HEALOTHER)
 				s = SPL_FLARE;
 			if (s == maxSpells)
 				s = SPL_FIREBOLT;
@@ -1776,7 +1785,7 @@ void GetOilType(int i, int max_lvl)
 	int cnt, t, j, r;
 	char rnd[32];
 
-	if (gbMaxPlayers == 1) {
+	if (!gbIsMultiplayer) {
 		if (max_lvl == 0)
 			max_lvl = 1;
 		cnt = 0;
@@ -2475,7 +2484,7 @@ int RndItem(int m)
 	int ril[512];
 
 	if ((monster[m].MData->mTreasure & 0x8000) != 0)
-		return -1 - (monster[m].MData->mTreasure & 0xFFF);
+		return -((monster[m].MData->mTreasure & 0xFFF) + 1);
 
 	if (monster[m].MData->mTreasure & 0x4000)
 		return 0;
@@ -2501,9 +2510,9 @@ int RndItem(int m)
 			ril[ri] = i;
 			ri++;
 		}
-		if (AllItemsList[i].iSpell == SPL_RESURRECT && gbMaxPlayers == 1)
+		if (AllItemsList[i].iSpell == SPL_RESURRECT && !gbIsMultiplayer)
 			ri--;
-		if (AllItemsList[i].iSpell == SPL_HEALOTHER && gbMaxPlayers == 1)
+		if (AllItemsList[i].iSpell == SPL_HEALOTHER && !gbIsMultiplayer)
 			ri--;
 	}
 
@@ -2517,8 +2526,8 @@ int RndUItem(int m)
 	int ril[512];
 	BOOL okflag;
 
-	if (m != -1 && (monster[m].MData->mTreasure & 0x8000) != 0 && gbMaxPlayers == 1)
-		return -1 - (monster[m].MData->mTreasure & 0xFFF);
+	if (m != -1 && (monster[m].MData->mTreasure & 0x8000) != 0 && !gbIsMultiplayer)
+		return -((monster[m].MData->mTreasure & 0xFFF) + 1);
 
 	int curlv = items_get_currlevel();
 	ri = 0;
@@ -2544,9 +2553,9 @@ int RndUItem(int m)
 			okflag = FALSE;
 		if (AllItemsList[i].iMiscId == IMISC_BOOK)
 			okflag = TRUE;
-		if (AllItemsList[i].iSpell == SPL_RESURRECT && gbMaxPlayers == 1)
+		if (AllItemsList[i].iSpell == SPL_RESURRECT && !gbIsMultiplayer)
 			okflag = FALSE;
-		if (AllItemsList[i].iSpell == SPL_HEALOTHER && gbMaxPlayers == 1)
+		if (AllItemsList[i].iSpell == SPL_HEALOTHER && !gbIsMultiplayer)
 			okflag = FALSE;
 		if (okflag && ri < 512) {
 			ril[ri] = i;
@@ -2575,9 +2584,9 @@ int RndAllItems()
 			ril[ri] = i;
 			ri++;
 		}
-		if (AllItemsList[i].iSpell == SPL_RESURRECT && gbMaxPlayers == 1)
+		if (AllItemsList[i].iSpell == SPL_RESURRECT && !gbIsMultiplayer)
 			ri--;
-		if (AllItemsList[i].iSpell == SPL_HEALOTHER && gbMaxPlayers == 1)
+		if (AllItemsList[i].iSpell == SPL_HEALOTHER && !gbIsMultiplayer)
 			ri--;
 	}
 
@@ -2628,7 +2637,7 @@ int CheckUnique(int i, int lvl, int uper, BOOL recreate)
 			break;
 		if (UniqueItemList[j].UIItemId == AllItemsList[item[i].IDidx].iItemId
 		    && lvl >= UniqueItemList[j].UIMinLvl
-		    && (recreate || !UniqueItemFlag[j] || gbMaxPlayers != 1)) {
+		    && (recreate || !UniqueItemFlag[j] || gbIsMultiplayer)) {
 			uok[j] = TRUE;
 			numu++;
 		}
@@ -2774,7 +2783,7 @@ void SpawnItem(int m, int x, int y, BOOL sendmsg)
 	int ii, idx;
 	BOOL onlygood;
 
-	if (monster[m]._uniqtype || ((monster[m].MData->mTreasure & 0x8000) && gbMaxPlayers != 1)) {
+	if (monster[m]._uniqtype || ((monster[m].MData->mTreasure & 0x8000) && gbIsMultiplayer)) {
 		idx = RndUItem(m);
 		if (idx < 0) {
 			SpawnUnique(-(idx + 1), x, y);
@@ -2965,12 +2974,7 @@ void RecreateItem(int ii, int idx, WORD icreateinfo, int iseed, int ivalue)
 		item[ii]._iSeed = iseed;
 		item[ii]._iCreateInfo = icreateinfo;
 		item[ii]._ivalue = ivalue;
-		if (ivalue >= GOLD_MEDIUM_LIMIT)
-			item[ii]._iCurs = ICURS_GOLD_LARGE;
-		else if (ivalue <= GOLD_SMALL_LIMIT)
-			item[ii]._iCurs = ICURS_GOLD_SMALL;
-		else
-			item[ii]._iCurs = ICURS_GOLD_MEDIUM;
+		SetPlrHandGoldCurs(&item[ii]);
 	} else {
 		if (!icreateinfo) {
 			SetPlrHandItem(&item[ii], idx);
@@ -3157,6 +3161,9 @@ void SpawnRock()
 	int xx, yy;
 	int ostand;
 
+	if (numitems >= MAXITEMS)
+		return;
+
 	ostand = FALSE;
 	for (i = 0; i < nobjects && !ostand; i++) {
 		ii = objectactive[i];
@@ -3184,6 +3191,9 @@ void SpawnRock()
 void SpawnRewardItem(int itemid, int xx, int yy)
 {
 	int i;
+
+	if (numitems >= MAXITEMS)
+		return;
 
 	i = itemavail[0];
 	int curlv = items_get_currlevel();
@@ -3261,7 +3271,7 @@ void ItemDoppel()
 	int idoppelx;
 	ItemStruct *i;
 
-	if (gbMaxPlayers != 1) {
+	if (gbIsMultiplayer) {
 		for (idoppelx = 16; idoppelx < 96; idoppelx++) {
 			if (dItem[idoppelx][idoppely]) {
 				i = &item[dItem[idoppelx][idoppely] - 1];
@@ -4421,12 +4431,14 @@ void UseItem(int p, int Mid, int spl)
 		plr[p]._pMemSpells |= SPELLBIT(spl);
 		if (plr[p]._pSplLvl[spl] < MAX_SPELL_LEVEL)
 			plr[p]._pSplLvl[spl]++;
-		plr[p]._pMana += spelldata[spl].sManaCost << 6;
-		if (plr[p]._pMana > plr[p]._pMaxMana)
-			plr[p]._pMana = plr[p]._pMaxMana;
-		plr[p]._pManaBase += spelldata[spl].sManaCost << 6;
-		if (plr[p]._pManaBase > plr[p]._pMaxManaBase)
-			plr[p]._pManaBase = plr[p]._pMaxManaBase;
+		if (!(plr[p]._pIFlags & ISPL_NOMANA)) {
+			plr[p]._pMana += spelldata[spl].sManaCost << 6;
+			if (plr[p]._pMana > plr[p]._pMaxMana)
+				plr[p]._pMana = plr[p]._pMaxMana;
+			plr[p]._pManaBase += spelldata[spl].sManaCost << 6;
+			if (plr[p]._pManaBase > plr[p]._pMaxManaBase)
+				plr[p]._pManaBase = plr[p]._pMaxManaBase;
+		}
 		if (p == myplr)
 			CalcPlrBookVals(p);
 		drawmanaflag = TRUE;
@@ -4638,7 +4650,7 @@ BOOL PremiumItemOk(int i)
 	if (!gbIsHellfire && AllItemsList[i].itype == ITYPE_STAFF)
 		rv = FALSE;
 
-	if (gbMaxPlayers != 1) {
+	if (gbIsMultiplayer) {
 		if (AllItemsList[i].iMiscId == IMISC_OILOF)
 			rv = FALSE;
 		if (AllItemsList[i].itype == ITYPE_RING)
@@ -4836,9 +4848,9 @@ BOOL WitchItemOk(int i)
 		rv = FALSE;
 	if (AllItemsList[i].iMiscId > IMISC_OILFIRST && AllItemsList[i].iMiscId < IMISC_OILLAST)
 		rv = FALSE;
-	if (AllItemsList[i].iSpell == SPL_RESURRECT && gbMaxPlayers == 1)
+	if (AllItemsList[i].iSpell == SPL_RESURRECT && !gbIsMultiplayer)
 		rv = FALSE;
-	if (AllItemsList[i].iSpell == SPL_HEALOTHER && gbMaxPlayers == 1)
+	if (AllItemsList[i].iSpell == SPL_HEALOTHER && !gbIsMultiplayer)
 		rv = FALSE;
 
 	return rv;
@@ -5134,9 +5146,9 @@ BOOL HealerItemOk(int i)
 	if (AllItemsList[i].iMiscId == IMISC_SCROLL)
 		return AllItemsList[i].iSpell == SPL_HEAL;
 	if (AllItemsList[i].iMiscId == IMISC_SCROLLT)
-		return AllItemsList[i].iSpell == SPL_HEALOTHER && gbMaxPlayers != 1;
+		return AllItemsList[i].iSpell == SPL_HEALOTHER && gbIsMultiplayer;
 
-	if (gbMaxPlayers == 1) {
+	if (!gbIsMultiplayer) {
 		if (AllItemsList[i].iMiscId == IMISC_ELIXSTR)
 			return !gbIsHellfire || plr[myplr]._pBaseStr < MaxStats[plr[myplr]._pClass][ATTRIB_STR];
 		if (AllItemsList[i].iMiscId == IMISC_ELIXMAG)
@@ -5212,7 +5224,7 @@ void SpawnHealer(int lvl)
 	healitem[1]._iCreateInfo = lvl;
 	healitem[1]._iStatFlag = TRUE;
 
-	if (gbMaxPlayers != 1) {
+	if (gbIsMultiplayer) {
 		GetItemAttrs(0, IDI_RESURRECT, 1);
 		healitem[2] = item[0];
 		healitem[2]._iCreateInfo = lvl;

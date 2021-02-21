@@ -95,17 +95,38 @@ cmake --build . -j $(sysctl -n hw.ncpuonline)
 
 ### Installing dependencies on WSL, Debian and Ubuntu
 
-Download and place the 32bit MinGW Development Libraries of [SDL2](https://www.libsdl.org/download-2.0.php), [SDL2_mixer](https://www.libsdl.org/projects/SDL_mixer/), [SDL2_ttf](https://www.libsdl.org/projects/SDL_ttf/) and [Libsodium](https://github.com/jedisct1/libsodium/releases) in `/usr/i686-w64-mingw32`. This can be done automatically by running 
-`Packaging/windows/mingw-prep.sh`.
+### 32-bit
+
+Download and place the 32bit MinGW Development Libraries of [SDL2](https://www.libsdl.org/download-2.0.php), [SDL2_mixer](https://www.libsdl.org/projects/SDL_mixer/), [SDL2_ttf](https://www.libsdl.org/projects/SDL_ttf/) and [Libsodium](https://github.com/jedisct1/libsodium/releases) in `/usr/i686-w64-mingw32`. This can be done automatically by running `Packaging/windows/mingw-prep.sh`.
 NOTE: SDL2 2.0.12 appears to not compile correctly.
 
 ```
 sudo apt-get install cmake gcc-mingw-w64-i686 g++-mingw-w64-i686
 ```
+
+### 64-bit
+
+Download and place the 64bit MinGW Development Libraries of [SDL2](https://www.libsdl.org/download-2.0.php), [SDL2_mixer](https://www.libsdl.org/projects/SDL_mixer/), [SDL2_ttf](https://www.libsdl.org/projects/SDL_ttf/) and [Libsodium](https://github.com/jedisct1/libsodium/releases) in `/usr/x86_64-w64-mingw32`. This can be done automatically by running `Packaging/windows/mingw-prep64.sh`.
+NOTE: SDL2 2.0.12 appears to not compile correctly.
+
+```
+sudo apt-get install cmake gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
+```
 ### Compiling
+
+### 32-bit
+
 ```
 cd build
 cmake -DCMAKE_TOOLCHAIN_FILE=../CMake/mingwcc.cmake ..
+make -j$(nproc)
+```
+
+### 64-bit
+
+```
+cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=../CMake/mingwcc64.cmake ..
 make -j$(nproc)
 ```
 </details>
@@ -169,6 +190,37 @@ DEVKITPRO=<path to devkit> Packaging/switch/build.sh
 The nro-file will be generated in the build folder. Test with an emulator (RyuJinx) or real hardware.
 
 [Nintendo Switch manual](docs/manual/platforms/switch.md)
+</details>
+
+<details><summary>Nintendo 3DS</summary>
+
+### Installing dependencies
+
+https://devkitpro.org/wiki/Getting_Started
+
+
+- Install (dkp-)pacman: https://devkitpro.org/wiki/devkitPro_pacman
+
+- Install required packages with (dkp-)pacman:
+```
+sudo (dkp-)pacman -S devkitARM general-tools 3dstools devkitpro-pkgbuild-helpers \
+	libctru citro3d 3ds-sdl 3ds-sdl_ttf 3ds-sdl_mixer \
+	3ds-freetype 3ds-libogg 3ds-libvorbisidec 3ds-mikmod
+```
+- Download or compile [bannertool](https://github.com/Steveice10/bannertool/releases) and [makerom](https://github.com/jakcron/Project_CTR/releases)
+  - Copy binaries to: `/opt/devkitpro/tools/bin/`
+
+### Compiling
+```
+cd build
+cmake .. -DNIGHTLY_BUILD=ON -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/3ds.cmake
+make -j$(nproc)
+```
+*Note:*  Add `-DHELLFIRE=ON` to build the Hellfire binaries.
+
+The output-files will be generated in the build folder.
+
+[Nintendo 3DS manual](docs/manual/platforms/n3ds.md)
 </details>
 
 <details><summary>Haiku</summary>

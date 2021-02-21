@@ -89,7 +89,7 @@ void SetupTownStores()
 	int i, l;
 
 	SetRndSeed(glSeedTbl[currlevel] * SDL_GetTicks());
-	if (gbMaxPlayers == 1) {
+	if (!gbIsMultiplayer) {
 		l = 0;
 		for (i = 0; i < NUMLEVELS; i++) {
 			if (plr[myplr]._pLvlVisited[i])
@@ -1837,22 +1837,12 @@ void S_SmithEnter()
 
 void SetGoldCurs(int pnum, int i)
 {
-	if (plr[pnum].InvList[i]._ivalue >= GOLD_MEDIUM_LIMIT)
-		plr[pnum].InvList[i]._iCurs = ICURS_GOLD_LARGE;
-	else if (plr[pnum].InvList[i]._ivalue <= GOLD_SMALL_LIMIT)
-		plr[pnum].InvList[i]._iCurs = ICURS_GOLD_SMALL;
-	else
-		plr[pnum].InvList[i]._iCurs = ICURS_GOLD_MEDIUM;
+	SetPlrHandGoldCurs(&plr[pnum].InvList[i]);
 }
 
 void SetSpdbarGoldCurs(int pnum, int i)
 {
-	if (plr[pnum].SpdList[i]._ivalue >= GOLD_MEDIUM_LIMIT)
-		plr[pnum].SpdList[i]._iCurs = ICURS_GOLD_LARGE;
-	else if (plr[pnum].SpdList[i]._ivalue <= GOLD_SMALL_LIMIT)
-		plr[pnum].SpdList[i]._iCurs = ICURS_GOLD_SMALL;
-	else
-		plr[pnum].SpdList[i]._iCurs = ICURS_GOLD_MEDIUM;
+	SetPlrHandGoldCurs(&plr[pnum].SpdList[i]);
 }
 
 void TakePlrsMoney(int cost)
@@ -2289,7 +2279,7 @@ void S_WBuyEnter()
 			done = FALSE;
 
 			for (i = 0; i < NUM_INV_GRID_ELEM && !done; i++) {
-				done = SpecialAutoPlace(myplr, i, cursW / 28, cursH / 28, FALSE);
+				done = SpecialAutoPlace(myplr, i, cursW / 28, cursH / 28);
 			}
 
 			if (done)
@@ -2404,7 +2394,7 @@ void HealerBuyItem()
 	int idx;
 
 	idx = stextvhold + ((stextlhold - stextup) >> 2);
-	if (gbMaxPlayers == 1) {
+	if (!gbIsMultiplayer) {
 		if (idx < 2)
 			plr[myplr].HoldItem._iSeed = AdvanceRndSeed();
 	} else {
@@ -2417,7 +2407,7 @@ void HealerBuyItem()
 		plr[myplr].HoldItem._iIdentified = FALSE;
 	StoreAutoPlace();
 
-	if (gbMaxPlayers == 1) {
+	if (!gbIsMultiplayer) {
 		if (idx < 2)
 			return;
 	} else {
@@ -2438,37 +2428,37 @@ void HealerBuyItem()
 
 void S_BBuyEnter()
 {
-	BOOL done;
-	int i;
-
-	if (stextsel == 10) {
-		stextshold = STORE_BBOY;
-		stextvhold = stextsval;
-		stextlhold = 10;
-		int price = boyitem._iIvalue;
-		if (gbIsHellfire)
-			price -= boyitem._iIvalue >> 2;
-		else
-			price += boyitem._iIvalue >> 1;
-		if (plr[myplr]._pGold < price) {
-			StartStore(STORE_NOMONEY);
-		} else {
-			plr[myplr].HoldItem = boyitem;
-			plr[myplr].HoldItem._iIvalue = price;
-			SetCursor_(plr[myplr].HoldItem._iCurs + CURSOR_FIRSTITEM);
-			done = FALSE;
-			for (i = 0; i < NUM_INV_GRID_ELEM && !done; i++) {
-				done = AutoPlace(myplr, i, cursW / 28, cursH / 28, FALSE);
-			}
-			if (done)
-				StartStore(STORE_CONFIRM);
-			else
-				StartStore(STORE_NOROOM);
-			SetCursor_(CURSOR_HAND);
-		}
-	} else {
+	if (stextsel != 10) {
 		stextflag = STORE_NONE;
+		return;
 	}
+
+	stextshold = STORE_BBOY;
+	stextvhold = stextsval;
+	stextlhold = 10;
+	int price = boyitem._iIvalue;
+	if (gbIsHellfire)
+		price -= boyitem._iIvalue >> 2;
+	else
+		price += boyitem._iIvalue >> 1;
+
+	if (plr[myplr]._pGold < price) {
+		StartStore(STORE_NOMONEY);
+		return;
+	}
+
+	plr[myplr].HoldItem = boyitem;
+	plr[myplr].HoldItem._iIvalue = price;
+	SetCursor_(plr[myplr].HoldItem._iCurs + CURSOR_FIRSTITEM);
+
+	bool done = false;
+	for (int i = 0; i < NUM_INV_GRID_ELEM && !done; i++) {
+		done = AutoPlace(myplr, i, cursW / 28, cursH / 28, false);
+	}
+
+	StartStore(done ? STORE_CONFIRM : STORE_NOROOM);
+
+	SetCursor_(CURSOR_HAND);
 }
 
 void StoryIdItem()
@@ -2590,20 +2580,23 @@ void S_HBuyEnter()
 		stextvhold = stextsval;
 		stextshold = STORE_HBUY;
 		idx = stextsval + ((stextsel - stextup) >> 2);
+
 		if (plr[myplr]._pGold < healitem[idx]._iIvalue) {
 			StartStore(STORE_NOMONEY);
 		} else {
 			plr[myplr].HoldItem = healitem[idx];
 			SetCursor_(plr[myplr].HoldItem._iCurs + CURSOR_FIRSTITEM);
 			done = FALSE;
-			i = 0;
+
 			for (i = 0; i < NUM_INV_GRID_ELEM && !done; i++) {
-				done = SpecialAutoPlace(myplr, i, cursW / 28, cursH / 28, FALSE);
+				done = SpecialAutoPlace(myplr, i, cursW / 28, cursH / 28);
 			}
+
 			if (done)
 				StartStore(STORE_CONFIRM);
 			else
 				StartStore(STORE_NOROOM);
+
 			SetCursor_(CURSOR_HAND);
 		}
 	}

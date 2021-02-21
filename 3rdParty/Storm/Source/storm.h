@@ -85,7 +85,6 @@ SNetDropPlayer(
  *  type:         The type of data to retrieve. See GAMEINFO_ flags.
  *  dst:          The destination buffer for the data.
  *  length:       The maximum size of the destination buffer.
- *  byteswritten: The number of bytes written to the destination buffer.
  *
  *  Returns TRUE if the function was called successfully and FALSE otherwise.
  */
@@ -94,8 +93,7 @@ STORMAPI
 SNetGetGameInfo(
     int type,
     void *dst,
-    unsigned int length,
-    unsigned int *byteswritten);
+    unsigned int length);
 
 /*  SNetGetTurnsInTransit @ 115
  *
@@ -109,7 +107,7 @@ SNetGetGameInfo(
 BOOL
 STORMAPI
 SNetGetTurnsInTransit(
-      int *turns);
+      DWORD *turns);
 
 // Network provider structures
 typedef struct _client_info
@@ -189,7 +187,8 @@ SNetSendMessage(
 #define SNPLAYER_OTHERS -2
 
 #define MPQ_FLAG_READ_ONLY 1
-
+#define SFILE_OPEN_FROM_MPQ 0
+#define SFILE_OPEN_LOCAL_FILE 0xFFFFFFFF
 
 /*  SNetSendTurn @ 128
  *
@@ -335,9 +334,8 @@ SErrSetLastError(
  *  src:          The source array.
  *  max_length:   The maximum length of dest.
  *
- *  Returns the number of characters copied.
  */
-int
+void
 STORMAPI
 SStrCopy(
     char *dest,

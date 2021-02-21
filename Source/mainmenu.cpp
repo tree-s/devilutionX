@@ -58,11 +58,9 @@ static BOOL mainmenu_single_player()
 		jogging_opt = FALSE;
 	}
 
-	gbMaxPlayers = 1;
+	gbIsMultiplayer = false;
 
-	if (!SRegLoadValue("devilutionx", "game speed", 0, &ticks_per_sec)) {
-		SRegSaveValue("devilutionx", "game speed", 0, ticks_per_sec);
-	}
+	ticks_per_sec = sgOptions.ticksPerSecound;
 
 	return mainmenu_init_menu(SELHERO_NEW_DUNGEON);
 }
@@ -70,7 +68,7 @@ static BOOL mainmenu_single_player()
 static BOOL mainmenu_multi_player()
 {
 	jogging_opt = FALSE;
-	gbMaxPlayers = MAX_PLRS;
+	gbIsMultiplayer = true;
 	return mainmenu_init_menu(SELHERO_CONNECT);
 }
 
@@ -101,14 +99,14 @@ BOOL mainmenu_select_hero_dialog(
 {
 	BOOL hero_is_created = TRUE;
 	int dlgresult = 0;
-	if (gbMaxPlayers == 1) {
+	if (!gbIsMultiplayer) {
 		if (!UiSelHeroSingDialog(
 		        pfile_ui_set_hero_infos,
 		        pfile_ui_save_create,
 		        pfile_delete_save,
 		        pfile_ui_set_class_stats,
 		        &dlgresult,
-		        gszHero,
+		        &gszHero,
 		        &gnDifficulty))
 			app_fatal("Unable to display SelHeroSing");
 		client_info->initdata->bDiff = gnDifficulty;
@@ -125,7 +123,7 @@ BOOL mainmenu_select_hero_dialog(
 	               pfile_ui_set_class_stats,
 	               &dlgresult,
 	               &hero_is_created,
-	               gszHero)) {
+	               &gszHero)) {
 		app_fatal("Can't load multiplayer dialog");
 	}
 	if (dlgresult == SELHERO_PREVIOUS) {

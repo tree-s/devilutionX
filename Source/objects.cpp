@@ -978,7 +978,7 @@ void InitObjects()
 	} else {
 		InitObjFlag = TRUE;
 		AdvanceRndSeed();
-		if (currlevel == 9 && gbMaxPlayers == 1)
+		if (currlevel == 9 && !gbIsMultiplayer)
 			AddSlainHero();
 		if (currlevel == quests[Q_MUSHROOM]._qlevel && quests[Q_MUSHROOM]._qactive == QUEST_INIT)
 			AddMushPatch();
@@ -1083,7 +1083,7 @@ void InitObjects()
 				LoadMapObjs(mem, 2 * setpc_x, 2 * setpc_y);
 				mem_free_dbg(mem);
 			}
-			if (QuestStatus(Q_BETRAYER) && gbMaxPlayers == 1)
+			if (QuestStatus(Q_BETRAYER) && !gbIsMultiplayer)
 				AddLazStand();
 			InitRndBarrels();
 			AddL4Goodies();
@@ -1380,10 +1380,10 @@ void AddShrine(int i)
 		} else {
 			slist[j] = 1;
 		}
-		if (gbMaxPlayers != 1 && shrineavail[j] == 1) {
+		if (gbIsMultiplayer && shrineavail[j] == 1) {
 			slist[j] = 0;
 		}
-		if (gbMaxPlayers == 1 && shrineavail[j] == 2) {
+		if (!gbIsMultiplayer && shrineavail[j] == 2) {
 			slist[j] = 0;
 		}
 	}
@@ -1420,9 +1420,9 @@ void AddPurifyingFountain(int i)
 
 	ox = object[i]._ox;
 	oy = object[i]._oy;
-	dObject[ox][oy - 1] = -1 - i;
-	dObject[ox - 1][oy] = -1 - i;
-	dObject[ox - 1][oy - 1] = -1 - i;
+	dObject[ox][oy - 1] = -(i + 1);
+	dObject[ox - 1][oy] = -(i + 1);
+	dObject[ox - 1][oy - 1] = -(i + 1);
 	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
@@ -1452,9 +1452,9 @@ void AddMurkyFountain(int i)
 
 	ox = object[i]._ox;
 	oy = object[i]._oy;
-	dObject[ox][oy - 1] = -1 - i;
-	dObject[ox - 1][oy] = -1 - i;
-	dObject[ox - 1][oy - 1] = -1 - i;
+	dObject[ox][oy - 1] = -(i + 1);
+	dObject[ox - 1][oy] = -(i + 1);
+	dObject[ox - 1][oy - 1] = -(i + 1);
 	object[i]._oRndSeed = AdvanceRndSeed();
 }
 
@@ -1565,9 +1565,9 @@ void AddMushPatch()
 	if (nobjects < MAXOBJECTS) {
 		i = objectavail[0];
 		GetRndObjLoc(5, &x, &y);
-		dObject[x + 1][y + 1] = -1 - i;
-		dObject[x + 2][y + 1] = -1 - i;
-		dObject[x + 1][y + 2] = -1 - i;
+		dObject[x + 1][y + 1] = -(i + 1);
+		dObject[x + 2][y + 1] = -(i + 1);
+		dObject[x + 1][y + 2] = -(i + 1);
 		AddObject(OBJ_MUSHPATCH, x + 2, y + 2);
 	}
 }
@@ -2908,26 +2908,26 @@ void OperateBook(int pnum, int i)
 		return;
 
 	if (setlvlnum == SL_BONECHAMB) {
-		plr[myplr]._pMemSpells |= SPELLBIT(SPL_GUARDIAN);
+		plr[pnum]._pMemSpells |= SPELLBIT(SPL_GUARDIAN);
 		if (plr[pnum]._pSplLvl[SPL_GUARDIAN] < MAX_SPELL_LEVEL)
-			plr[myplr]._pSplLvl[SPL_GUARDIAN]++;
+			plr[pnum]._pSplLvl[SPL_GUARDIAN]++;
 		quests[Q_SCHAMB]._qactive = QUEST_DONE;
 		if (!deltaload)
 			PlaySfxLoc(IS_QUESTDN, object[i]._ox, object[i]._oy);
 		InitDiabloMsg(EMSG_BONECHAMB);
 		AddMissile(
-		    plr[myplr]._px,
-		    plr[myplr]._py,
+		    plr[pnum]._px,
+		    plr[pnum]._py,
 		    object[i]._ox - 2,
 		    object[i]._oy - 4,
-		    plr[myplr]._pdir,
+		    plr[pnum]._pdir,
 		    MIS_GUARDIAN,
 		    TARGET_MONSTERS,
-		    myplr,
+		    pnum,
 		    0,
 		    0);
 	}
-	if (setlevel && setlvlnum == SL_VILEBETRAYER) {
+	if (setlvlnum == SL_VILEBETRAYER) {
 		ObjChangeMapResync(
 		    object[i]._oVar1,
 		    object[i]._oVar2,
@@ -4210,13 +4210,13 @@ int FindValidShrine(int i)
 			done = TRUE;
 		}
 		if (done) {
-			if (gbMaxPlayers != 1) {
+			if (gbIsMultiplayer) {
 				if (shrineavail[rv] == 1) {
 					done = FALSE;
 					continue;
 				}
 			}
-			if (gbMaxPlayers == 1) {
+			if (!gbIsMultiplayer) {
 				if (shrineavail[rv] == 2) {
 					done = FALSE;
 					continue;
@@ -4395,10 +4395,8 @@ void OperateWeaponRack(int pnum, int i, bool sendmsg)
 	if (deltaload)
 		return;
 
-	if (leveltype > 1)
-		CreateTypeItem(object[i]._ox, object[i]._oy, TRUE, weaponType, IMISC_NONE, sendmsg, FALSE);
-	else
-		CreateTypeItem(object[i]._ox, object[i]._oy, FALSE, weaponType, IMISC_NONE, sendmsg, FALSE);
+	CreateTypeItem(object[i]._ox, object[i]._oy, leveltype > 1, weaponType, IMISC_NONE, sendmsg, FALSE);
+
 	if (pnum == myplr)
 		NetSendCmdParam1(FALSE, CMD_OPERATEOBJ, i);
 }

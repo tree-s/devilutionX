@@ -3,6 +3,8 @@
  *
  * Implementation of player functionality, leveling, actions, creation, loading, etc.
  */
+#include <algorithm>
+
 #include "all.h"
 #include "../3rdParty/Storm/Source/storm.h"
 
@@ -213,8 +215,6 @@ const char *const ClassStrTbl[] = {
 	"Rogue",
 	"Warrior",
 };
-/** Unused local of PM_ChangeLightOff, originally for computing light radius. */
-BYTE fix[9] = { 0, 0, 3, 3, 3, 6, 6, 6, 8 };
 
 void SetPlayerGPtrs(BYTE *pData, BYTE **pAnim)
 {
@@ -412,21 +412,15 @@ void InitPlrGFXMem(int pnum)
 
 	if (!(plr_gfx_flag & 0x1)) { //STAND
 		plr_gfx_flag |= 0x1;
-		if (GetPlrGFXSize("ST") > GetPlrGFXSize("AS")) {
-			plr_sframe_size = GetPlrGFXSize("ST"); //TOWN
-		} else {
-			plr_sframe_size = GetPlrGFXSize("AS"); //DUNGEON
-		}
+		// ST: TOWN, AS: DUNGEON
+		plr_sframe_size = std::max(GetPlrGFXSize("ST"), GetPlrGFXSize("AS"));
 	}
 	plr[pnum]._pNData = DiabloAllocPtr(plr_sframe_size);
 
 	if (!(plr_gfx_flag & 0x2)) { //WALK
 		plr_gfx_flag |= 0x2;
-		if (GetPlrGFXSize("WL") > GetPlrGFXSize("AW")) {
-			plr_wframe_size = GetPlrGFXSize("WL"); //TOWN
-		} else {
-			plr_wframe_size = GetPlrGFXSize("AW"); //DUNGEON
-		}
+		// WL: TOWN, AW: DUNGEON
+		plr_wframe_size = std::max(GetPlrGFXSize("WL"), GetPlrGFXSize("AW"));
 	}
 	plr[pnum]._pWData = DiabloAllocPtr(plr_wframe_size);
 
@@ -698,30 +692,18 @@ void CreatePlayer(int pnum, char c)
 	plr[pnum]._pClass = c;
 
 	val = StrengthTbl[c];
-	if (val < 0) {
-		val = 0;
-	}
 	plr[pnum]._pStrength = val;
 	plr[pnum]._pBaseStr = val;
 
 	val = MagicTbl[c];
-	if (val < 0) {
-		val = 0;
-	}
 	plr[pnum]._pMagic = val;
 	plr[pnum]._pBaseMag = val;
 
 	val = DexterityTbl[c];
-	if (val < 0) {
-		val = 0;
-	}
 	plr[pnum]._pDexterity = val;
 	plr[pnum]._pBaseDex = val;
 
 	val = VitalityTbl[c];
-	if (val < 0) {
-		val = 0;
-	}
 	plr[pnum]._pVitality = val;
 	plr[pnum]._pBaseVit = val;
 
@@ -893,7 +875,7 @@ void NextPlrLevel(int pnum)
 	plr[pnum]._pNextExper = ExpLvlsTbl[plr[pnum]._pLevel];
 
 	hp = plr[pnum]._pClass == PC_SORCERER ? 64 : 128;
-	if (gbMaxPlayers == 1) {
+	if (!gbIsMultiplayer) {
 		hp++;
 	}
 	plr[pnum]._pMaxHP += hp;
@@ -912,7 +894,7 @@ void NextPlrLevel(int pnum)
 	else
 		mana = 128;
 
-	if (gbMaxPlayers == 1) {
+	if (!gbIsMultiplayer) {
 		mana++;
 	}
 	plr[pnum]._pMaxMana += mana;
@@ -929,7 +911,8 @@ void NextPlrLevel(int pnum)
 
 	if (sgbControllerActive)
 		FocusOnCharInfo();
-		CalcPlrInv(pnum, TRUE);
+
+	CalcPlrInv(pnum, TRUE);
 }
 
 void AddPlrExperience(int pnum, int lvl, int exp)
@@ -955,7 +938,7 @@ void AddPlrExperience(int pnum, int lvl, int exp)
 	}
 
 	// Prevent power leveling
-	if (gbMaxPlayers > 1) {
+	if (gbIsMultiplayer) {
 		powerLvlCap = plr[pnum]._pLevel < 0 ? 0 : plr[pnum]._pLevel;
 		if (powerLvlCap >= 50) {
 			powerLvlCap = 50;
@@ -1408,7 +1391,7 @@ void StartWalk(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int y
 		plr[pnum]._pVar7 = 0;
 		break;
 	case PM_WALK2:
-		dPlayer[plr[pnum]._px][plr[pnum]._py] = -1 - pnum;
+		dPlayer[plr[pnum]._px][plr[pnum]._py] = -(pnum + 1);
 		plr[pnum]._pVar1 = plr[pnum]._px;
 		plr[pnum]._pVar2 = plr[pnum]._py;
 		plr[pnum]._px = px; // Move player to the next tile to maintain correct render order
@@ -1431,8 +1414,8 @@ void StartWalk(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int y
 		int x = mapx + plr[pnum]._px;
 		int y = mapy + plr[pnum]._py;
 
-		dPlayer[plr[pnum]._px][plr[pnum]._py] = -1 - pnum;
-		dPlayer[px][py] = -1 - pnum;
+		dPlayer[plr[pnum]._px][plr[pnum]._py] = -(pnum + 1);
+		dPlayer[px][py] = -(pnum + 1);
 		plr[pnum]._pVar4 = x;
 		plr[pnum]._pVar5 = y;
 		dFlags[x][y] |= BFLAG_PLAYERLR;
@@ -1701,11 +1684,6 @@ void RespawnDeadItem(ItemStruct *itm, int x, int y)
 		return;
 	}
 
-	if (FindGetItem(itm->IDidx, itm->_iCreateInfo, itm->_iSeed) >= 0) {
-		DrawInvMsg("A duplicate item has been detected.  Destroying duplicate...");
-		SyncGetItem(x, y, itm->IDidx, itm->_iCreateInfo, itm->_iSeed);
-	}
-
 	ii = itemavail[0];
 	dItem[x][y] = ii + 1;
 	itemavail[0] = itemavail[MAXITEMS - numitems - 1];
@@ -1776,7 +1754,7 @@ StartPlayerKill(int pnum, int earflag)
 		NetSendCmdParam1(TRUE, CMD_PLRDEAD, earflag);
 	}
 
-	diablolevel = gbMaxPlayers > 1 && plr[pnum].plrlevel == 16;
+	diablolevel = gbIsMultiplayer && plr[pnum].plrlevel == 16;
 
 	if ((DWORD)pnum >= MAX_PLRS) {
 		app_fatal("StartPlayerKill: illegal player %d", pnum);
@@ -2006,8 +1984,8 @@ void StripTopGold(int pnum)
 				SetGoldCurs(pnum, i);
 				SetPlrHandItem(&plr[pnum].HoldItem, 0);
 				GetGoldSeed(pnum, &plr[pnum].HoldItem);
-				SetPlrHandGoldCurs(&plr[pnum].HoldItem);
 				plr[pnum].HoldItem._ivalue = val;
+				SetPlrHandGoldCurs(&plr[pnum].HoldItem);
 				if (!GoldAutoPlace(pnum))
 					PlrDeadItem(pnum, &plr[pnum].HoldItem, 0, 0);
 			}
@@ -2136,7 +2114,7 @@ StartNewLvl(int pnum, int fom, int lvl)
 		plr[pnum]._pmode = PM_NEWLVL;
 		plr[pnum]._pInvincible = TRUE;
 		PostMessage(fom, 0, 0);
-		if (gbMaxPlayers > 1) {
+		if (gbIsMultiplayer) {
 			NetSendCmdParam2(TRUE, CMD_NEWLVL, fom, lvl);
 		}
 	}
@@ -2169,7 +2147,7 @@ void StartWarpLvl(int pnum, int pidx)
 {
 	InitLevelChange(pnum);
 
-	if (gbMaxPlayers != 1) {
+	if (gbIsMultiplayer) {
 		if (plr[pnum].plrlevel != 0) {
 			plr[pnum].plrlevel = 0;
 		} else {
@@ -3085,7 +3063,7 @@ BOOL PM_DoDeath(int pnum)
 			deathdelay--;
 			if (deathdelay == 1) {
 				deathflag = TRUE;
-				if (gbMaxPlayers == 1) {
+				if (!gbIsMultiplayer) {
 					gamemenu_on();
 				}
 			}
@@ -3282,7 +3260,7 @@ void CheckNewPath(int pnum)
 			i = plr[pnum].destParam1;
 			x = abs(plr[pnum]._px - object[i]._ox);
 			y = abs(plr[pnum]._py - object[i]._oy);
-			if (y > 1 && dObject[object[i]._ox][object[i]._oy - 1] == -1 - i) {
+			if (y > 1 && dObject[object[i]._ox][object[i]._oy - 1] == -(i + 1)) {
 				y = abs(plr[pnum]._py - object[i]._oy + 1);
 			}
 			if (x <= 1 && y <= 1) {
@@ -3298,7 +3276,7 @@ void CheckNewPath(int pnum)
 			i = plr[pnum].destParam1;
 			x = abs(plr[pnum]._px - object[i]._ox);
 			y = abs(plr[pnum]._py - object[i]._oy);
-			if (y > 1 && dObject[object[i]._ox][object[i]._oy - 1] == -1 - i) {
+			if (y > 1 && dObject[object[i]._ox][object[i]._oy - 1] == -(i + 1)) {
 				y = abs(plr[pnum]._py - object[i]._oy + 1);
 			}
 			if (x <= 1 && y <= 1) {
@@ -3378,7 +3356,7 @@ void CheckNewPath(int pnum)
 			i = plr[pnum].destParam1;
 			x = abs(plr[pnum]._px - object[i]._ox);
 			y = abs(plr[pnum]._py - object[i]._oy);
-			if (y > 1 && dObject[object[i]._ox][object[i]._oy - 1] == -1 - i) {
+			if (y > 1 && dObject[object[i]._ox][object[i]._oy - 1] == -(i + 1)) {
 				y = abs(plr[pnum]._py - object[i]._oy + 1);
 			}
 			if (x <= 1 && y <= 1) {
@@ -3937,7 +3915,7 @@ void SyncInitPlrPos(int pnum)
 	plr[pnum]._ptargx = plr[pnum]._px;
 	plr[pnum]._ptargy = plr[pnum]._py;
 
-	if (gbMaxPlayers == 1 || plr[pnum].plrlevel != currlevel) {
+	if (!gbIsMultiplayer || plr[pnum].plrlevel != currlevel) {
 		return;
 	}
 
@@ -4285,7 +4263,7 @@ void PlayDungMsgs()
 		app_fatal("PlayDungMsgs: illegal player %d", myplr);
 	}
 
-	if (currlevel == 1 && !plr[myplr]._pLvlVisited[1] && gbMaxPlayers == 1 && !(plr[myplr].pDungMsgs & DMSG_CATHEDRAL)) {
+	if (currlevel == 1 && !plr[myplr]._pLvlVisited[1] && !gbIsMultiplayer && !(plr[myplr].pDungMsgs & DMSG_CATHEDRAL)) {
 		sfxdelay = 40;
 		if (plr[myplr]._pClass == PC_WARRIOR) {
 			sfxdnum = PS_WARR97;
@@ -4301,7 +4279,7 @@ void PlayDungMsgs()
 			sfxdnum = PS_WARR97;
 		}
 		plr[myplr].pDungMsgs = plr[myplr].pDungMsgs | DMSG_CATHEDRAL;
-	} else if (currlevel == 5 && !plr[myplr]._pLvlVisited[5] && gbMaxPlayers == 1 && !(plr[myplr].pDungMsgs & DMSG_CATACOMBS)) {
+	} else if (currlevel == 5 && !plr[myplr]._pLvlVisited[5] && !gbIsMultiplayer && !(plr[myplr].pDungMsgs & DMSG_CATACOMBS)) {
 		sfxdelay = 40;
 		if (plr[myplr]._pClass == PC_WARRIOR) {
 			sfxdnum = PS_WARR96B;
@@ -4317,7 +4295,7 @@ void PlayDungMsgs()
 			sfxdnum = PS_WARR96B;
 		}
 		plr[myplr].pDungMsgs |= DMSG_CATACOMBS;
-	} else if (currlevel == 9 && !plr[myplr]._pLvlVisited[9] && gbMaxPlayers == 1 && !(plr[myplr].pDungMsgs & DMSG_CAVES)) {
+	} else if (currlevel == 9 && !plr[myplr]._pLvlVisited[9] && !gbIsMultiplayer && !(plr[myplr].pDungMsgs & DMSG_CAVES)) {
 		sfxdelay = 40;
 		if (plr[myplr]._pClass == PC_WARRIOR) {
 			sfxdnum = PS_WARR98;
@@ -4333,7 +4311,7 @@ void PlayDungMsgs()
 			sfxdnum = PS_WARR98;
 		}
 		plr[myplr].pDungMsgs |= DMSG_CAVES;
-	} else if (currlevel == 13 && !plr[myplr]._pLvlVisited[13] && gbMaxPlayers == 1 && !(plr[myplr].pDungMsgs & DMSG_HELL)) {
+	} else if (currlevel == 13 && !plr[myplr]._pLvlVisited[13] && !gbIsMultiplayer && !(plr[myplr].pDungMsgs & DMSG_HELL)) {
 		sfxdelay = 40;
 		if (plr[myplr]._pClass == PC_WARRIOR) {
 			sfxdnum = PS_WARR99;
@@ -4349,24 +4327,24 @@ void PlayDungMsgs()
 			sfxdnum = PS_WARR99;
 		}
 		plr[myplr].pDungMsgs |= DMSG_HELL;
-	} else if (currlevel == 16 && !plr[myplr]._pLvlVisited[15] && gbMaxPlayers == 1 && !(plr[myplr].pDungMsgs & DMSG_DIABLO)) { // BUGFIX: _pLvlVisited should check 16 or this message will never play
+	} else if (currlevel == 16 && !plr[myplr]._pLvlVisited[15] && !gbIsMultiplayer && !(plr[myplr].pDungMsgs & DMSG_DIABLO)) { // BUGFIX: _pLvlVisited should check 16 or this message will never play
 		sfxdelay = 40;
 		if (plr[myplr]._pClass == PC_WARRIOR || plr[myplr]._pClass == PC_ROGUE || plr[myplr]._pClass == PC_SORCERER || plr[myplr]._pClass == PC_MONK || plr[myplr]._pClass == PC_BARD || plr[myplr]._pClass == PC_BARBARIAN) {
 			sfxdnum = PS_DIABLVLINT;
 		}
 		plr[myplr].pDungMsgs |= DMSG_DIABLO;
-	} else if (currlevel == 17 && !plr[myplr]._pLvlVisited[17] && gbMaxPlayers == 1 && !(plr[myplr].pDungMsgs2 & 1)) {
+	} else if (currlevel == 17 && !plr[myplr]._pLvlVisited[17] && !gbIsMultiplayer && !(plr[myplr].pDungMsgs2 & 1)) {
 		sfxdelay = 10;
 		sfxdnum = USFX_DEFILER1;
 		quests[Q_DEFILER]._qactive = 2;
 		quests[Q_DEFILER]._qlog = 1;
 		quests[Q_DEFILER]._qmsg = 286;
 		plr[myplr].pDungMsgs2 |= 1;
-	} else if (currlevel == 19 && !plr[myplr]._pLvlVisited[19] && gbMaxPlayers == 1 && !(plr[myplr].pDungMsgs2 & 4)) {
+	} else if (currlevel == 19 && !plr[myplr]._pLvlVisited[19] && !gbIsMultiplayer && !(plr[myplr].pDungMsgs2 & 4)) {
 		sfxdelay = 10;
 		sfxdnum = USFX_DEFILER3;
 		plr[myplr].pDungMsgs2 |= 4;
-	} else if (currlevel == 21 && !plr[myplr]._pLvlVisited[21] && gbMaxPlayers == 1 && !(plr[myplr].pDungMsgs & 32)) {
+	} else if (currlevel == 21 && !plr[myplr]._pLvlVisited[21] && !gbIsMultiplayer && !(plr[myplr].pDungMsgs & 32)) {
 		sfxdelay = 30;
 		if (plr[myplr]._pClass == PC_WARRIOR) {
 			sfxdnum = PS_WARR92;
