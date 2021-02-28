@@ -319,6 +319,7 @@ static void run_game_loop(unsigned int uMsg)
 	gbRunGameResult = TRUE;
 	force_redraw = 255;
 	DrawAndBlit();
+	LoadPWaterPalette();
 	PaletteFadeIn(8);
 	force_redraw = 255;
 	gbGameLoopStartup = TRUE;
@@ -465,7 +466,7 @@ static void diablo_init()
 
 	diablo_init_screen();
 
-	snd_init(NULL);
+	snd_init();
 	was_snd_init = true;
 
 	ui_sound_init();
@@ -1167,15 +1168,17 @@ static void PressChar(WPARAM vkey)
 			AutomapZoomOut();
 		}
 		return;
-	case 'v':
-		char *difficulties[3];
+	case 'v': {
 		char pszStr[120];
-		difficulties[0] = "Normal";
-		difficulties[1] = "Nightmare";
-		difficulties[2] = "Hell";
+		const char *difficulties[3] = {
+			"Normal",
+			"Nightmare",
+			"Hell",
+		};
 		sprintf(pszStr, "%s, mode = %s", gszProductName, difficulties[gnDifficulty]);
 		NetSendCmdString(1 << myplr, pszStr);
 		return;
+	}
 	case 'V':
 		NetSendCmdString(1 << myplr, gszVersionNumber);
 		return;
@@ -1325,7 +1328,7 @@ static void GetMousePos(LPARAM lParam)
 	MouseY = (short)((lParam >> 16) & 0xffff);
 }
 
-void DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+void DisableInputWndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg) {
 	case DVL_WM_KEYDOWN:
@@ -1357,16 +1360,14 @@ void DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		sgbMouseDown = CLICK_NONE;
 		return;
 	case DVL_WM_CAPTURECHANGED:
-		if (hWnd == (HWND)lParam)
-			return;
 		sgbMouseDown = CLICK_NONE;
 		return;
 	}
 
-	MainWndProc(hWnd, uMsg, wParam, lParam);
+	MainWndProc(uMsg, wParam, lParam);
 }
 
-void GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+void GM_Game(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg) {
 	case DVL_WM_KEYDOWN:
@@ -1422,10 +1423,8 @@ void GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		return;
 	case DVL_WM_CAPTURECHANGED:
-		if (hWnd != (HWND)lParam) {
-			sgbMouseDown = CLICK_NONE;
-			track_repeat_walk(FALSE);
-		}
+		sgbMouseDown = CLICK_NONE;
+		track_repeat_walk(FALSE);
 		break;
 	case WM_DIABNEXTLVL:
 	case WM_DIABPREVLVL:
@@ -1446,6 +1445,7 @@ void GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		ShowProgress(uMsg);
 		force_redraw = 255;
 		DrawAndBlit();
+		LoadPWaterPalette();
 		if (gbRunGame)
 			PaletteFadeIn(8);
 		nthread_ignore_mutex(FALSE);
@@ -1453,7 +1453,7 @@ void GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return;
 	}
 
-	MainWndProc(hWnd, uMsg, wParam, lParam);
+	MainWndProc(uMsg, wParam, lParam);
 }
 
 void LoadLvlGFX()

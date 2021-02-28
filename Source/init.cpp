@@ -12,6 +12,11 @@
 #include <SDL.h>
 #include <config.h>
 
+#ifdef __vita__
+// increase default allowed heap size on Vita
+int _newlib_heap_size_user = 100 * 1024 * 1024;
+#endif
+
 DEVILUTION_BEGIN_NAMESPACE
 
 _SNETVERSIONDATA fileinfo;
@@ -48,7 +53,7 @@ HANDLE init_test_access(const char *mpq_name, const char *reg_loc, int dwPriorit
 	const std::string *paths[2] = { &GetBasePath(), &GetPrefPath() };
 	std::string mpq_abspath;
 	DWORD mpq_flags = 0;
-#if !defined(__SWITCH__) && !defined(__AMIGA__)
+#if !defined(__SWITCH__) && !defined(__AMIGA__) && !defined(__vita__)
 	mpq_flags |= MPQ_FLAG_READ_ONLY;
 #endif
 	for (int i = 0; i < 2; i++) {
@@ -66,8 +71,8 @@ HANDLE init_test_access(const char *mpq_name, const char *reg_loc, int dwPriorit
 
 /* data */
 
-char gszVersionNumber[260] = "internal version unknown";
-char gszProductName[260] = "Diablo v1.09";
+char gszVersionNumber[64] = "internal version unknown";
+char gszProductName[64] = "Diablo v1.09";
 
 void init_cleanup()
 {
@@ -137,9 +142,6 @@ void init_archives()
 	memset(&fileinfo, 0, sizeof(fileinfo));
 	fileinfo.size = sizeof(fileinfo);
 	fileinfo.versionstring = gszVersionNumber;
-	fileinfo.executablefile = "";
-	fileinfo.originalarchivefile = "";
-	fileinfo.patcharchivefile = "";
 	init_get_file_info();
 
 	diabdat_mpq = init_test_access("diabdat.mpq", "DiabloCD", 1000, FS_CD);
@@ -173,14 +175,14 @@ void init_create_window()
 {
 	if (!SpawnWindow(PROJECT_NAME))
 		app_fatal("Unable to create main window");
-	dx_init(NULL);
+	dx_init();
 	gbActive = true;
 	gpBufStart = &gpBuffer[BUFFER_WIDTH * SCREEN_Y];
 	gpBufEnd = (BYTE *)(BUFFER_WIDTH * (SCREEN_HEIGHT + SCREEN_Y));
 	SDL_DisableScreenSaver();
 }
 
-void MainWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+void MainWndProc(UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg) {
 	case DVL_WM_PAINT:

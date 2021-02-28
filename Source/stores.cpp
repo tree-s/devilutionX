@@ -339,13 +339,12 @@ static void PrintStoreItem(ItemStruct *x, int l, char iclr)
 	if ((str + mag + dex) == 0) {
 		strcat(sstr, "No required attributes");
 	} else {
-		strcpy(tempstr, "Required:");
 		if (x->_iMinStr)
-			sprintf(tempstr, "%s %i Str", tempstr, x->_iMinStr);
+			sprintf(tempstr, "Required: %i Str", x->_iMinStr);
 		if (x->_iMinMag)
-			sprintf(tempstr, "%s %i Mag", tempstr, x->_iMinMag);
+			sprintf(tempstr, "Required: %i Mag", x->_iMinMag);
 		if (x->_iMinDex)
-			sprintf(tempstr, "%s %i Dex", tempstr, x->_iMinDex);
+			sprintf(tempstr, "Required: %i Dex", x->_iMinDex);
 		strcat(sstr, tempstr);
 	}
 	AddSText(40, l++, FALSE, sstr, iclr, FALSE);
@@ -488,7 +487,7 @@ void S_StartSBuy()
 	stextsize = TRUE;
 	stextscrl = TRUE;
 	stextsval = 0;
-	sprintf(tempstr, "I have these items for sale :           Your gold : %i", plr[myplr]._pGold);
+	sprintf(tempstr, "I have these items for sale:             Your gold: %i", plr[myplr]._pGold);
 	AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 	AddSLine(3);
 	AddSLine(21);
@@ -558,7 +557,7 @@ BOOL S_StartSPBuy()
 	stextscrl = TRUE;
 	stextsval = 0;
 
-	sprintf(tempstr, "I have these premium items for sale :   Your gold : %i", plr[myplr]._pGold);
+	sprintf(tempstr, "I have these premium items for sale:     Your gold: %i", plr[myplr]._pGold);
 	AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 	AddSLine(3);
 	AddSLine(21);
@@ -696,7 +695,7 @@ void S_StartSSell()
 
 	if (!sellok) {
 		stextscrl = FALSE;
-		sprintf(tempstr, "You have nothing I want.            Your gold : %i", plr[myplr]._pGold);
+		sprintf(tempstr, "You have nothing I want.             Your gold: %i", plr[myplr]._pGold);
 		AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 		AddSLine(3);
 		AddSLine(21);
@@ -706,7 +705,7 @@ void S_StartSSell()
 		stextscrl = TRUE;
 		stextsval = 0;
 		stextsmax = plr[myplr]._pNumInv;
-		sprintf(tempstr, "Which item is for sale?            Your gold : %i", plr[myplr]._pGold);
+		sprintf(tempstr, "Which item is for sale?             Your gold: %i", plr[myplr]._pGold);
 		AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 		AddSLine(3);
 		AddSLine(21);
@@ -791,7 +790,7 @@ void S_StartSRepair()
 	}
 	if (!repairok) {
 		stextscrl = FALSE;
-		sprintf(tempstr, "You have nothing to repair.            Your gold : %i", plr[myplr]._pGold);
+		sprintf(tempstr, "You have nothing to repair.             Your gold: %i", plr[myplr]._pGold);
 		AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 		AddSLine(3);
 		AddSLine(21);
@@ -803,7 +802,7 @@ void S_StartSRepair()
 	stextscrl = TRUE;
 	stextsval = 0;
 	stextsmax = plr[myplr]._pNumInv;
-	sprintf(tempstr, "Repair which item?            Your gold : %i", plr[myplr]._pGold);
+	sprintf(tempstr, "Repair which item?             Your gold: %i", plr[myplr]._pGold);
 	AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 	AddSLine(3);
 	AddSLine(21);
@@ -872,7 +871,7 @@ void S_StartWBuy()
 	stextscrl = TRUE;
 	stextsval = 0;
 	stextsmax = 20;
-	sprintf(tempstr, "I have these items for sale :           Your gold : %i", plr[myplr]._pGold);
+	sprintf(tempstr, "I have these items for sale:             Your gold: %i", plr[myplr]._pGold);
 	AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 	AddSLine(3);
 	AddSLine(21);
@@ -966,7 +965,7 @@ void S_StartWSell()
 
 	if (!sellok) {
 		stextscrl = FALSE;
-		sprintf(tempstr, "You have nothing I want.            Your gold : %i", plr[myplr]._pGold);
+		sprintf(tempstr, "You have nothing I want.             Your gold: %i", plr[myplr]._pGold);
 		AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 		AddSLine(3);
 		AddSLine(21);
@@ -976,7 +975,7 @@ void S_StartWSell()
 		stextscrl = TRUE;
 		stextsval = 0;
 		stextsmax = plr[myplr]._pNumInv;
-		sprintf(tempstr, "Which item is for sale?            Your gold : %i", plr[myplr]._pGold);
+		sprintf(tempstr, "Which item is for sale?             Your gold: %i", plr[myplr]._pGold);
 		AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 		AddSLine(3);
 		AddSLine(21);
@@ -1042,7 +1041,7 @@ void S_StartWRecharge()
 
 	if (!rechargeok) {
 		stextscrl = FALSE;
-		sprintf(tempstr, "You have nothing to recharge.            Your gold : %i", plr[myplr]._pGold);
+		sprintf(tempstr, "You have nothing to recharge.             Your gold: %i", plr[myplr]._pGold);
 		AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 		AddSLine(3);
 		AddSLine(21);
@@ -1052,7 +1051,7 @@ void S_StartWRecharge()
 		stextscrl = TRUE;
 		stextsval = 0;
 		stextsmax = plr[myplr]._pNumInv;
-		sprintf(tempstr, "Recharge which item?            Your gold : %i", plr[myplr]._pGold);
+		sprintf(tempstr, "Recharge which item?             Your gold: %i", plr[myplr]._pGold);
 		AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 		AddSLine(3);
 		AddSLine(21);
@@ -1170,7 +1169,7 @@ void S_StartBBoy()
 
 	stextsize = TRUE;
 	stextscrl = FALSE;
-	sprintf(tempstr, "I have this item for sale :           Your gold : %i", plr[myplr]._pGold);
+	sprintf(tempstr, "I have this item for sale:             Your gold: %i", plr[myplr]._pGold);
 	AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 	AddSLine(3);
 	AddSLine(21);
@@ -1206,23 +1205,15 @@ static void HealPlayer()
 
 void S_StartHealer()
 {
-	if (gbIsHellfire) {
-		HealPlayer();
-	}
+	HealPlayer();
 	stextsize = FALSE;
 	stextscrl = FALSE;
 	AddSText(0, 1, TRUE, "Welcome to the", COL_GOLD, FALSE);
 	AddSText(0, 3, TRUE, "Healer's home", COL_GOLD, FALSE);
 	AddSText(0, 9, TRUE, "Would you like to:", COL_GOLD, FALSE);
 	AddSText(0, 12, TRUE, "Talk to Pepin", COL_BLUE, TRUE);
-	if (gbIsHellfire) {
-		AddSText(0, 14, TRUE, "Buy items", COL_WHITE, TRUE);
-		AddSText(0, 16, TRUE, "Leave Healer's home", COL_WHITE, TRUE);
-	} else {
-		AddSText(0, 14, TRUE, "Receive healing", COL_WHITE, TRUE);
-		AddSText(0, 16, TRUE, "Buy items", COL_WHITE, TRUE);
-		AddSText(0, 18, TRUE, "Leave Healer's home", COL_WHITE, TRUE);
-	}
+	AddSText(0, 14, TRUE, "Buy items", COL_WHITE, TRUE);
+	AddSText(0, 16, TRUE, "Leave Healer's home", COL_WHITE, TRUE);
 	AddSLine(5);
 	storenumh = 20;
 }
@@ -1260,7 +1251,7 @@ void S_StartHBuy()
 	stextsize = TRUE;
 	stextscrl = TRUE;
 	stextsval = 0;
-	sprintf(tempstr, "I have these items for sale :           Your gold : %i", plr[myplr]._pGold);
+	sprintf(tempstr, "I have these items for sale:             Your gold: %i", plr[myplr]._pGold);
 	AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 	AddSLine(3);
 	AddSLine(21);
@@ -1361,7 +1352,7 @@ void S_StartSIdentify()
 
 	if (!idok) {
 		stextscrl = FALSE;
-		sprintf(tempstr, "You have nothing to identify.            Your gold : %i", plr[myplr]._pGold);
+		sprintf(tempstr, "You have nothing to identify.             Your gold: %i", plr[myplr]._pGold);
 		AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 		AddSLine(3);
 		AddSLine(21);
@@ -1371,7 +1362,7 @@ void S_StartSIdentify()
 		stextscrl = TRUE;
 		stextsval = 0;
 		stextsmax = plr[myplr]._pNumInv;
-		sprintf(tempstr, "Identify which item?            Your gold : %i", plr[myplr]._pGold);
+		sprintf(tempstr, "Identify which item?             Your gold: %i", plr[myplr]._pGold);
 		AddSText(0, 1, TRUE, tempstr, COL_GOLD, FALSE);
 		AddSLine(3);
 		AddSLine(21);
@@ -2550,18 +2541,9 @@ void S_HealerEnter()
 		StartStore(STORE_GOSSIP);
 		break;
 	case 14:
-		if (gbIsHellfire)
-			StartStore(STORE_HBUY);
-		else
-			HealPlayer();
+		StartStore(STORE_HBUY);
 		break;
 	case 16:
-		if (gbIsHellfire)
-			stextflag = STORE_NONE;
-		else
-			StartStore(STORE_HBUY);
-		break;
-	case 18:
 		stextflag = STORE_NONE;
 		break;
 	}

@@ -191,6 +191,11 @@ static void LoadItemData(ItemStruct *pItem)
 		CopyInt(tbuff, &pItem->_iDamAcFlags);
 	else
 		pItem->_iDamAcFlags = 0;
+
+	if (!IsItemAvailable(pItem->IDidx)) {
+		pItem->IDidx = 0;
+		pItem->_itype = ITYPE_NONE;
+	}
 }
 
 static void LoadItems(const int n, ItemStruct *pItem)
@@ -396,14 +401,15 @@ static void LoadPlayer(int i)
 		tbuff += 1;
 		pPlayer->pOriginalCathedral = true;
 	}
-	CopyBytes(tbuff, 2, &pPlayer->bReserved);
+	tbuff += 2; // Available bytes
 	CopyShort(tbuff, &pPlayer->wReflections);
-	CopyShorts(tbuff, 7, &pPlayer->wReserved);
+	tbuff += 14; // Available bytes
 
 	CopyInt(tbuff, &pPlayer->pDiabloKillLevel);
 	CopyInt(tbuff, &pPlayer->pDifficulty);
 	CopyInt(tbuff, &pPlayer->pDamAcFlags);
-	CopyInts(tbuff, 5, &pPlayer->dwReserved);
+	tbuff += 20; // Available bytes
+	CalcPlrItemVals(i, FALSE);
 
 	// Omit pointer _pNData
 	// Omit pointer _pWData
@@ -416,6 +422,8 @@ static void LoadPlayer(int i)
 	// Omit pointer _pBData
 	// Omit pointer pReserved
 }
+
+bool gbSkipSync = false;
 
 static void LoadMonster(int i)
 {
@@ -510,6 +518,9 @@ static void LoadMonster(int i)
 	// Omit pointer MType;
 	// Omit pointer MData;
 
+	if (gbSkipSync)
+		return;
+
 	SyncMonsterAnim(i);
 }
 
@@ -530,7 +541,7 @@ static void LoadMissile(int i)
 	CopyInt(tbuff, &pMissile->_mityoff);
 	CopyInt(tbuff, &pMissile->_mimfnum);
 	CopyInt(tbuff, &pMissile->_mispllvl);
-	CopyInt(tbuff, &pMissile->_miDelFlag);
+	pMissile->_miDelFlag = LoadBool32();
 	CopyChar(tbuff, &pMissile->_miAnimType);
 	tbuff += 3; // Alignment
 	CopyInt(tbuff, &pMissile->_miAnimFlags);
@@ -542,15 +553,15 @@ static void LoadMissile(int i)
 	CopyInt(tbuff, &pMissile->_miAnimCnt);
 	CopyInt(tbuff, &pMissile->_miAnimAdd);
 	CopyInt(tbuff, &pMissile->_miAnimFrame);
-	CopyInt(tbuff, &pMissile->_miDrawFlag);
-	CopyInt(tbuff, &pMissile->_miLightFlag);
-	CopyInt(tbuff, &pMissile->_miPreFlag);
+	pMissile->_miDrawFlag = LoadBool32();
+	pMissile->_miLightFlag = LoadBool32();
+	pMissile->_miPreFlag = LoadBool32();
 	CopyInt(tbuff, &pMissile->_miUniqTrans);
 	CopyInt(tbuff, &pMissile->_mirange);
 	CopyInt(tbuff, &pMissile->_misource);
 	CopyInt(tbuff, &pMissile->_micaster);
 	CopyInt(tbuff, &pMissile->_midam);
-	CopyInt(tbuff, &pMissile->_miHitFlag);
+	pMissile->_miHitFlag = LoadBool32();
 	CopyInt(tbuff, &pMissile->_midist);
 	CopyInt(tbuff, &pMissile->_mlid);
 	CopyInt(tbuff, &pMissile->_mirnd);
@@ -752,6 +763,54 @@ bool IsHeaderValid(int magicNumber)
 	return false;
 }
 
+void ConvertLevels()
+{
+	// Backup current level state
+	bool _setlevel = setlevel;
+	int _setlvlnum = setlvlnum;
+	int _currlevel = currlevel;
+	int _leveltype = leveltype;
+	BYTE *_tbuff = tbuff;
+
+	gbSkipSync = true;
+
+	setlevel = false; // Convert regular levels
+	for (int i = 0; i < giNumberOfLevels; i++) {
+		currlevel = i;
+		if (!LevelFileExists())
+			continue;
+
+		leveltype = gnLevelTypeTbl[i];
+
+		LoadLevel();
+		SaveLevel();
+	}
+
+	setlevel = true; // Convert quest levels
+	for (int i = 0; i < MAXQUESTS; i++) {
+		leveltype = questlist[i]._qlvlt;
+		if (leveltype == DTYPE_NONE) {
+			continue;
+		}
+
+		setlvlnum = questlist[i]._qslvl;
+		if (!LevelFileExists())
+			continue;
+
+		LoadLevel();
+		SaveLevel();
+	}
+
+	gbSkipSync = false;
+
+	// Restor current level state
+	setlevel = _setlevel;
+	setlvlnum = _setlvlnum;
+	currlevel = _currlevel;
+	leveltype = _leveltype;
+	tbuff = _tbuff;
+}
+
 /**
  * @brief Load game state
  * @param firstflag Can be set to false if we are simply reloading the current game
@@ -786,6 +845,8 @@ void LoadGame(BOOL firstflag)
 	setlvlnum = WLoad();
 	currlevel = WLoad();
 	leveltype = WLoad();
+	if (!setlevel)
+		leveltype = gnLevelTypeTbl[currlevel];
 	_ViewX = WLoad();
 	_ViewY = WLoad();
 	invflag = LoadBool8();
@@ -795,9 +856,12 @@ void LoadGame(BOOL firstflag)
 	_nummissiles = WLoad();
 	_nobjects = WLoad();
 
+	if (!gbIsHellfire && currlevel > 17)
+		app_fatal("Player is on a Hellfire only level");
+
 	for (i = 0; i < giNumberOfLevels; i++) {
 		glSeedTbl[i] = ILoad();
-		gnLevelTypeTbl[i] = WLoad();
+		tbuff += 4; // Skip loading gnLevelTypeTbl
 	}
 
 	LoadPlayer(myplr);
@@ -810,6 +874,9 @@ void LoadGame(BOOL firstflag)
 		LoadQuest(i);
 	for (i = 0; i < MAXPORTAL; i++)
 		LoadPortal(i);
+
+	if (gbIsHellfireSaveGame != gbIsHellfire)
+		ConvertLevels();
 
 	LoadGameLevel(firstflag, ENTRY_LOAD);
 	SyncInitPlr(myplr);
@@ -940,7 +1007,10 @@ void LoadGame(BOOL firstflag)
 	SetCursor_(CURSOR_HAND);
 	gbProcessPlayers = TRUE;
 
-    gbIsHellfireSaveGame = gbIsHellfire;
+	if (gbIsHellfireSaveGame != gbIsHellfire)
+		SaveGame();
+
+	gbIsHellfireSaveGame = gbIsHellfire;
 }
 
 static void BSave(char v)
@@ -982,7 +1052,9 @@ static void SaveBool32(bool value)
 
 static void SaveItem(ItemStruct *pItem)
 {
-	int idx = RemapItemIdxToDiablo(pItem->IDidx);
+	int idx = pItem->IDidx;
+	if (!gbIsHellfire)
+		idx = RemapItemIdxToDiablo(idx);
 	int iType = pItem->_itype;
 	if (idx == -1) {
 		idx = 0;
@@ -1261,14 +1333,14 @@ static void SavePlayer(int i)
 		CopyChar(&pPlayer->pBattleNet, tbuff);
 	CopyChar(&pPlayer->pManaShield, tbuff);
 	CopyChar(&pPlayer->pOriginalCathedral, tbuff);
-	CopyBytes(&pPlayer->bReserved, 2, tbuff);
+	tbuff += 2; // Available bytes
 	CopyShort(&pPlayer->wReflections, tbuff);
-	CopyShorts(&pPlayer->wReserved, 7, tbuff);
+	tbuff += 14; // Available bytes
 
 	CopyInt(&pPlayer->pDiabloKillLevel, tbuff);
 	CopyInt(&pPlayer->pDifficulty, tbuff);
 	CopyInt(&pPlayer->pDamAcFlags, tbuff);
-	CopyInts(&pPlayer->dwReserved, 5, tbuff);
+	tbuff += 20; // Available bytes
 
 	// Omit pointer _pNData
 	// Omit pointer _pWData
@@ -1396,7 +1468,7 @@ static void SaveMissile(int i)
 	CopyInt(&pMissile->_mityoff, tbuff);
 	CopyInt(&pMissile->_mimfnum, tbuff);
 	CopyInt(&pMissile->_mispllvl, tbuff);
-	CopyInt(&pMissile->_miDelFlag, tbuff);
+	SaveBool32(pMissile->_miDelFlag);
 	CopyChar(&pMissile->_miAnimType, tbuff);
 	tbuff += 3; // Alignment
 	CopyInt(&pMissile->_miAnimFlags, tbuff);
@@ -1408,15 +1480,15 @@ static void SaveMissile(int i)
 	CopyInt(&pMissile->_miAnimCnt, tbuff);
 	CopyInt(&pMissile->_miAnimAdd, tbuff);
 	CopyInt(&pMissile->_miAnimFrame, tbuff);
-	CopyInt(&pMissile->_miDrawFlag, tbuff);
-	CopyInt(&pMissile->_miLightFlag, tbuff);
-	CopyInt(&pMissile->_miPreFlag, tbuff);
+	SaveBool32(pMissile->_miDrawFlag);
+	SaveBool32(pMissile->_miLightFlag);
+	SaveBool32(pMissile->_miPreFlag);
 	CopyInt(&pMissile->_miUniqTrans, tbuff);
 	CopyInt(&pMissile->_mirange, tbuff);
 	CopyInt(&pMissile->_misource, tbuff);
 	CopyInt(&pMissile->_micaster, tbuff);
 	CopyInt(&pMissile->_midam, tbuff);
-	CopyInt(&pMissile->_miHitFlag, tbuff);
+	SaveBool32(pMissile->_miHitFlag);
 	CopyInt(&pMissile->_midist, tbuff);
 	CopyInt(&pMissile->_mlid, tbuff);
 	CopyInt(&pMissile->_mirnd, tbuff);
@@ -1847,8 +1919,10 @@ void LoadLevel()
 			objectavail[i] = BLoad();
 		for (i = 0; i < nobjects; i++)
 			LoadObject(objectactive[i]);
-		for (i = 0; i < nobjects; i++)
-			SyncObjectAnim(objectactive[i]);
+		if (!gbSkipSync) {
+			for (i = 0; i < nobjects; i++)
+				SyncObjectAnim(objectactive[i]);
+		}
 	}
 
 	for (i = 0; i < MAXITEMS; i++)
@@ -1894,10 +1968,12 @@ void LoadLevel()
 		}
 	}
 
-	AutomapZoomReset();
-	ResyncQuests();
-	SyncPortals();
-	dolighting = TRUE;
+	if (!gbSkipSync) {
+		AutomapZoomReset();
+		ResyncQuests();
+		SyncPortals();
+		dolighting = TRUE;
+	}
 
 	for (i = 0; i < MAX_PLRS; i++) {
 		if (plr[i].plractive && currlevel == plr[i].plrlevel)

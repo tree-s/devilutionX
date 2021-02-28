@@ -674,10 +674,7 @@ void AddChestTraps()
 					if (leveltype == DTYPE_CATACOMBS) {
 						object[oi]._oVar4 = random_(0, 2);
 					} else {
-						if (gbIsHellfire)
-							object[oi]._oVar4 = random_(0, 6);
-						else
-							object[oi]._oVar4 = random_(0, 3);
+						object[oi]._oVar4 = random_(0, gbIsHellfire ? 6 : 3);
 					}
 				}
 			}
@@ -1375,16 +1372,11 @@ void AddShrine(int i)
 	int shrines = gbIsHellfire ? NUM_SHRINETYPE : 26;
 
 	for (j = 0; j < shrines; j++) {
-		if (currlevel < shrinemin[j] || currlevel > shrinemax[j]) {
-			slist[j] = 0;
-		} else {
-			slist[j] = 1;
-		}
+		slist[j] = currlevel >= shrinemin[j] && currlevel <= shrinemax[j];
 		if (gbIsMultiplayer && shrineavail[j] == 1) {
-			slist[j] = 0;
-		}
-		if (!gbIsMultiplayer && shrineavail[j] == 2) {
-			slist[j] = 0;
+			slist[j] = false;
+		} else if (!gbIsMultiplayer && shrineavail[j] == 2) {
+			slist[j] = false;
 		}
 	}
 	do {
@@ -2969,7 +2961,7 @@ void OperateBookLever(int pnum, int i)
 			if (object[i]._otype != OBJ_BLOODBOOK)
 				ObjChangeMap(object[i]._oVar1, object[i]._oVar2, object[i]._oVar3, object[i]._oVar4);
 			if (object[i]._otype == OBJ_BLINDBOOK) {
-				CreateItem(UITEM_OPTAMULET, x + 5, y + 5);
+				SpawnUnique(UITEM_OPTAMULET, x + 5, y + 5);
 				tren = TransVal;
 				TransVal = 9;
 				DRLG_MRectTrans(object[i]._oVar1, object[i]._oVar2, object[i]._oVar3, object[i]._oVar4);
@@ -3291,7 +3283,7 @@ void OperatePedistal(int pnum, int i)
 			mem = LoadFileInMem("Levels\\L2Data\\Blood2.DUN", NULL);
 			LoadMapObjs(mem, 2 * setpc_x, 2 * setpc_y);
 			mem_free_dbg(mem);
-			CreateItem(UITEM_ARMOFVAL, 2 * setpc_x + 25, 2 * setpc_y + 19);
+			SpawnUnique(UITEM_ARMOFVAL, 2 * setpc_x + 25, 2 * setpc_y + 19);
 			object[i]._oSelFlag = 0;
 		}
 	}

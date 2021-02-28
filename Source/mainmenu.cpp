@@ -51,10 +51,7 @@ static BOOL mainmenu_init_menu(int type)
 
 static BOOL mainmenu_single_player()
 {
-	if (!SRegLoadValue("Hellfire", jogging_title, 0, &jogging_opt)) {
-		jogging_opt = TRUE;
-	}
-	if (!gbIsHellfire) {
+	if (!SRegLoadValue("qol", jogging_title, 0, &jogging_opt)) {
 		jogging_opt = FALSE;
 	}
 
@@ -174,10 +171,10 @@ void mainmenu_loop()
 				mainmenu_play_intro();
 			break;
 		case MAINMENU_SHOW_CREDITS:
-			UiCreditsDialog(16);
+			UiCreditsDialog();
 			break;
 		case MAINMENU_SHOW_SUPPORT:
-			//UiSupportDialog(16);
+			UiSupportDialog();
 			break;
 		case MAINMENU_EXIT_DIABLO:
 			done = TRUE;

@@ -264,7 +264,10 @@ WPARAM keystate_for_mouse(WPARAM ret)
 
 bool false_avail(const char *name, int value)
 {
+#ifndef __vita__
+	// Logging on Vita is slow due slow IO, so disable spamming unhandled events to log
 	SDL_Log("Unhandled SDL event: %s %d", name, value);
+#endif
 	return true;
 }
 
@@ -447,7 +450,7 @@ bool PeekMessage(LPMSG lpMsg)
 			break;
 		}
 		return true;
-	} else if (e.type < SDL_JOYAXISMOTION || e.type >= 0x700) {
+	} else if (e.type < SDL_JOYAXISMOTION || (e.type >= 0x700 && e.type < 0x800)) {
 		if (!mouseWarping || e.type != SDL_MOUSEMOTION)
 			sgbControllerActive = false;
 		if (mouseWarping && e.type == SDL_MOUSEMOTION)
@@ -534,13 +537,15 @@ bool PeekMessage(LPMSG lpMsg)
 		case SDL_WINDOWEVENT_EXPOSED:
 			lpMsg->message = DVL_WM_PAINT;
 			break;
+		case SDL_WINDOWEVENT_LEAVE:
+			lpMsg->message = DVL_WM_CAPTURECHANGED;
+			break;
 		case SDL_WINDOWEVENT_MOVED:
 		case SDL_WINDOWEVENT_RESIZED:
 		case SDL_WINDOWEVENT_SIZE_CHANGED:
 		case SDL_WINDOWEVENT_MINIMIZED:
 		case SDL_WINDOWEVENT_MAXIMIZED:
 		case SDL_WINDOWEVENT_RESTORED:
-		case SDL_WINDOWEVENT_LEAVE:
 		case SDL_WINDOWEVENT_FOCUS_GAINED:
 		case SDL_WINDOWEVENT_FOCUS_LOST:
 #if SDL_VERSION_ATLEAST(2, 0, 5)
@@ -709,7 +714,7 @@ void DispatchMessage(const MSG *lpMsg)
 {
 	assert(CurrentProc);
 
-	CurrentProc(NULL, lpMsg->message, lpMsg->wParam, lpMsg->lParam);
+	CurrentProc(lpMsg->message, lpMsg->wParam, lpMsg->lParam);
 }
 
 bool PostMessage(UINT Msg, WPARAM wParam, LPARAM lParam)

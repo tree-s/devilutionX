@@ -5,6 +5,8 @@
  */
 #include "all.h"
 
+#include <cstddef>
+
 DEVILUTION_BEGIN_NAMESPACE
 
 BYTE sgbNextTalkSave;
@@ -49,7 +51,7 @@ BOOL sbookflag;
 BOOL chrflag;
 BOOL drawbtnflag;
 BYTE *pSpellBkCel;
-char infostr[256];
+char infostr[64];
 int numpanbtns;
 char panelstr[4][64];
 BOOL panelflag;
@@ -338,8 +340,6 @@ void DrawSpellList()
 	y = PANEL_Y - 17;
 	ClearPanel();
 
-	int maxSpells = gbIsHellfire ? MAX_SPELLS : 37;
-
 	for (i = 0; i < 4; i++) {
 		switch ((spell_type)i) {
 		case RSPLTYPE_SKILL:
@@ -362,7 +362,7 @@ void DrawSpellList()
 			c = SPLICONLAST + 2;
 			break;
 		}
-		for (spl = 1, j = 1; j < maxSpells; spl <<= 1, j++) {
+		for (spl = 1, j = 1; j < MAX_SPELLS; spl <<= 1, j++) {
 			if (!(mask & spl))
 				continue;
 			if (i == RSPLTYPE_SPELL) {
@@ -777,22 +777,20 @@ void UpdateManaFlask()
 	DrawSpell();
 }
 
+static CelOutputBuffer AllocCelOutputBuffer(BYTE **raw, size_t width, size_t height) {
+	const std::size_t size = width * height;
+	*raw = DiabloAllocPtr(size);
+	memset(*raw, 0, size);
+	return CelOutputBuffer{*raw, *raw + size, static_cast<int>(width)};
+}
+
 void InitControlPan()
 {
 	int i;
-	BYTE *tBuff;
+	const CelOutputBuffer btm_buf = AllocCelOutputBuffer(&pBtmBuff, PANEL_WIDTH, (PANEL_HEIGHT + 16) * (gbIsMultiplayer ? 2 : 1));
+	const CelOutputBuffer mana_buf = AllocCelOutputBuffer(&pManaBuff, 88, 88);
+	const CelOutputBuffer life_buf = AllocCelOutputBuffer(&pLifeBuff, 88, 88);
 
-	if (!gbIsMultiplayer) {
-		pBtmBuff = DiabloAllocPtr((PANEL_HEIGHT + 16) * PANEL_WIDTH);
-		memset(pBtmBuff, 0, (PANEL_HEIGHT + 16) * PANEL_WIDTH);
-	} else {
-		pBtmBuff = DiabloAllocPtr((PANEL_HEIGHT + 16) * 2 * PANEL_WIDTH);
-		memset(pBtmBuff, 0, (PANEL_HEIGHT + 16) * 2 * PANEL_WIDTH);
-	}
-	pManaBuff = DiabloAllocPtr(88 * 88);
-	memset(pManaBuff, 0, 88 * 88);
-	pLifeBuff = DiabloAllocPtr(88 * 88);
-	memset(pLifeBuff, 0, 88 * 88);
 	pPanelText = LoadFileInMem("CtrlPan\\SmalText.CEL", NULL);
 	pChrPanel = LoadFileInMem("Data\\Char.CEL", NULL);
 	if (!gbIsHellfire)
@@ -800,18 +798,18 @@ void InitControlPan()
 	else
 		pSpellCels = LoadFileInMem("Data\\SpelIcon.CEL", NULL);
 	SetSpellTrans(RSPLTYPE_SKILL);
-	tBuff = LoadFileInMem("CtrlPan\\Panel8.CEL", NULL);
-	CelBlitWidth(pBtmBuff, 0, (PANEL_HEIGHT + 16) - 1, PANEL_WIDTH, tBuff, 1, PANEL_WIDTH);
-	MemFreeDbg(tBuff);
-	tBuff = LoadFileInMem("CtrlPan\\P8Bulbs.CEL", NULL);
-	CelBlitWidth(pLifeBuff, 0, 87, 88, tBuff, 1, 88);
-	CelBlitWidth(pManaBuff, 0, 87, 88, tBuff, 2, 88);
-	MemFreeDbg(tBuff);
+	BYTE *pStatusPanel = LoadFileInMem("CtrlPan\\Panel8.CEL", NULL);
+	CelDrawUnsafeTo(btm_buf, 0, (PANEL_HEIGHT + 16) - 1, pStatusPanel, 1, PANEL_WIDTH);
+	MemFreeDbg(pStatusPanel);
+	pStatusPanel = LoadFileInMem("CtrlPan\\P8Bulbs.CEL", NULL);
+	CelDrawUnsafeTo(life_buf, 0, 87, pStatusPanel, 1, 88);
+	CelDrawUnsafeTo(mana_buf, 0, 87, pStatusPanel, 2, 88);
+	MemFreeDbg(pStatusPanel);
 	talkflag = FALSE;
 	if (gbIsMultiplayer) {
-		tBuff = LoadFileInMem("CtrlPan\\TalkPanl.CEL", NULL);
-		CelBlitWidth(pBtmBuff, 0, (PANEL_HEIGHT + 16) * 2 - 1, PANEL_WIDTH, tBuff, 1, PANEL_WIDTH);
-		MemFreeDbg(tBuff);
+		BYTE * pTalkPanel = LoadFileInMem("CtrlPan\\TalkPanl.CEL", NULL);
+		CelDrawUnsafeTo(btm_buf, 0, (PANEL_HEIGHT + 16) * 2 - 1, pTalkPanel, 1, PANEL_WIDTH);
+		MemFreeDbg(pTalkPanel);
 		pMultiBtns = LoadFileInMem("CtrlPan\\P8But2.CEL", NULL);
 		pTalkBtns = LoadFileInMem("CtrlPan\\TalkButt.CEL", NULL);
 		sgbPlrTalkTbl = 0;
@@ -912,8 +910,6 @@ void DoSpeedBook()
 	X = xo - (BORDER_LEFT - SPLICONLENGTH / 2);
 	Y = yo - (BORDER_TOP + SPLICONLENGTH / 2);
 
-	int maxSpells = gbIsHellfire ? MAX_SPELLS : 37;
-
 	if (plr[myplr]._pRSpell != SPL_INVALID) {
 		for (i = 0; i < 4; i++) {
 			switch (i) {
@@ -931,7 +927,7 @@ void DoSpeedBook()
 				break;
 			}
 			spell = (__int64)1;
-			for (j = 1; j < maxSpells; j++) {
+			for (j = 1; j < MAX_SPELLS; j++) {
 				if (spell & spells) {
 					if (j == plr[myplr]._pRSpell && i == plr[myplr]._pRSplType) {
 						X = xo - (BORDER_LEFT - SPLICONLENGTH / 2);
@@ -1045,7 +1041,7 @@ void CheckPanelInfo()
 					strcpy(infostr, "Player attack");
 			}
 			if (PanBtnHotKey[i] != NULL) {
-				sprintf(tempstr, "Hotkey : %s", PanBtnHotKey[i]);
+				sprintf(tempstr, "Hotkey: %s", PanBtnHotKey[i]);
 				AddPanelString(tempstr, TRUE);
 			}
 			infoclr = COL_WHITE;
@@ -1058,7 +1054,7 @@ void CheckPanelInfo()
 		infoclr = COL_WHITE;
 		panelflag = TRUE;
 		pinfoflag = TRUE;
-		strcpy(tempstr, "Hotkey : 's'");
+		strcpy(tempstr, "Hotkey: 's'");
 		AddPanelString(tempstr, TRUE);
 		v = plr[myplr]._pRSpell;
 		if (v != SPL_INVALID) {
@@ -1344,7 +1340,7 @@ void DrawInfoBox()
 			infoclr = COL_GOLD;
 			strcpy(infostr, plr[pcursplr]._pName);
 			ClearPanel();
-			sprintf(tempstr, "%s, Level : %i", ClassStrTblOld[plr[pcursplr]._pClass], plr[pcursplr]._pLevel);
+			sprintf(tempstr, "%s, Level: %i", ClassStrTblOld[plr[pcursplr]._pClass], plr[pcursplr]._pLevel);
 			AddPanelString(tempstr, TRUE);
 			sprintf(tempstr, "Hit Points %i of %i", plr[pcursplr]._pHitPoints >> 6, plr[pcursplr]._pMaxHP >> 6);
 			AddPanelString(tempstr, TRUE);
@@ -1425,14 +1421,14 @@ void DrawChr()
 	sprintf(chrstr, "%i", plr[myplr]._pLevel);
 	ADD_PlrStringXY(66, 69, 109, chrstr, COL_WHITE);
 
-	sprintf(chrstr, "%li", plr[myplr]._pExperience);
+	sprintf(chrstr, "%i", plr[myplr]._pExperience);
 	ADD_PlrStringXY(216, 69, 300, chrstr, COL_WHITE);
 
 	if (plr[myplr]._pLevel == MAXCHARLEVEL - 1) {
 		strcpy(chrstr, "None");
 		col = COL_GOLD;
 	} else {
-		sprintf(chrstr, "%li", plr[myplr]._pNextExper);
+		sprintf(chrstr, "%i", plr[myplr]._pNextExper);
 		col = COL_WHITE;
 	}
 	ADD_PlrStringXY(216, 97, 300, chrstr, col);
@@ -1883,19 +1879,16 @@ void DrawSpellBook()
 	unsigned __int64 spl;
 
 	CelDraw(RIGHT_PANEL_X, 351 + SCREEN_Y, pSpellBkCel, 1, SPANEL_WIDTH);
-	if (gbIsHellfire && sbooktab < 5)
+	if (gbIsHellfire && sbooktab < 5) {
 		CelDraw(RIGHT_PANEL_X + 61 * sbooktab + 7, 348 + SCREEN_Y, pSBkBtnCel, sbooktab + 1, 61);
-	else if (gbIsHellfire && sbooktab < 4)
-		// BUGFIX: rendering of page 3 and page 4 buttons are both off-by-one pixel.
-		// The fix would look as follows:
-		//
-		//    int sx = RIGHT_PANEL_X + 76 * sbooktab + 7;
-		//    if (sbooktab == 2 || sbooktab == 3) {
-		//       sx++;
-		//    }
-		//    CelDraw(sx, 348 + SCREEN_Y, pSBkBtnCel, sbooktab + 1, 76);
-		CelDraw(RIGHT_PANEL_X + 76 * sbooktab + 7, 348 + SCREEN_Y, pSBkBtnCel, sbooktab + 1, 76);
-
+	} else {
+		// BUGFIX: rendering of page 3 and page 4 buttons are both off-by-one pixel (fixed).
+		int sx = RIGHT_PANEL_X + 76 * sbooktab + 7;
+		if (sbooktab == 2 || sbooktab == 3) {
+			sx++;
+		}
+		CelDraw(sx, 348 + SCREEN_Y, pSBkBtnCel, sbooktab + 1, 76);
+	}
 	spl = plr[myplr]._pMemSpells | plr[myplr]._pISpells | plr[myplr]._pAblSpells;
 
 	yp = 55 + SCREEN_Y;
