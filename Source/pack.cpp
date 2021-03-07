@@ -7,9 +7,10 @@
 
 DEVILUTION_BEGIN_NAMESPACE
 
-void PackItem(PkItemStruct *id, ItemStruct *is)
+void PackItem(PkItemStruct *id, const ItemStruct *is)
 {
-	if (is->_itype == ITYPE_NONE) {
+	memset(id, 0, sizeof(*id));
+	if (is->isEmpty()) {
 		id->idx = 0xFFFF;
 	} else {
 		int idx = is->IDidx;
@@ -19,14 +20,14 @@ void PackItem(PkItemStruct *id, ItemStruct *is)
 		id->idx = SwapLE16(idx);
 		if (is->IDidx == IDI_EAR) {
 			id->iCreateInfo = is->_iName[8] | (is->_iName[7] << 8);
-			id->iSeed = SwapLE32(is->_iName[12] | ((is->_iName[11] | ((is->_iName[10] | (is->_iName[9] << 8)) << 8)) << 8));
+			id->iSeed = LOAD_BE32(&is->_iName[9]);
 			id->bId = is->_iName[13];
 			id->bDur = is->_iName[14];
 			id->bMDur = is->_iName[15];
 			id->bCh = is->_iName[16];
 			id->bMCh = is->_iName[17];
 			id->wValue = SwapLE16(is->_ivalue | (is->_iName[18] << 8) | ((is->_iCurs - ICURS_EAR_SORCEROR) << 6));
-			id->dwBuff = SwapLE32(is->_iName[22] | ((is->_iName[21] | ((is->_iName[20] | (is->_iName[19] << 8)) << 8)) << 8));
+			id->dwBuff = LOAD_BE32(&is->_iName[19]);
 		} else {
 			id->iSeed = SwapLE32(is->_iSeed);
 			id->iCreateInfo = SwapLE16(is->_iCreateInfo);
@@ -130,7 +131,7 @@ void PackPlayer(PkPlayerStruct *pPack, int pnum, BOOL manashield)
  * @param is The source packed item
  * @param id The distination item
  */
-void UnPackItem(PkItemStruct *is, ItemStruct *id)
+void UnPackItem(const PkItemStruct *is, ItemStruct *id)
 {
 	WORD idx = SwapLE16(is->idx);
 	if (idx == 0xFFFF) {
@@ -160,6 +161,7 @@ void UnPackItem(PkItemStruct *is, ItemStruct *id)
 		    SwapLE16(is->wValue),
 		    SwapLE32(is->dwBuff));
 	} else {
+		memset(&item[MAXITEMS], 0, sizeof(*item));
 		RecreateItem(MAXITEMS, idx, SwapLE16(is->iCreateInfo), SwapLE32(is->iSeed), SwapLE16(is->wValue));
 		item[MAXITEMS]._iMagical = is->bId >> 1;
 		item[MAXITEMS]._iIdentified = is->bId & 1;

@@ -196,6 +196,7 @@ const char gszSpawnHelpText[] = {
 	"open a 'Speedbook' menu that also allows you to ready a skill "
 	"or spell for use.  To use a readied skill or spell, simply "
 	"right-click in the main play area.|"
+	"Shift + Left-clicking on the 'select current spell' button will clear the readied spell|"
 	"|"
 	"Skills are the innate abilities of your character. These skills "
 	"are different depending on what class you choose and require no "
@@ -429,6 +430,7 @@ const char gszHelpText[] = {
 	"which allows you to select a skill or spell for immediate use.  "
 	"To use a readied skill or spell, simply right-click in the main play "
 	"area.|"
+	"Shift + Left-clicking on the 'select current spell' button will clear the readied spell|"
 	"|"
 	"$Setting Spell Hotkeys|"
 	"You can assign up to four Hotkeys for skills, spells or scrolls.  "
@@ -447,7 +449,7 @@ void InitHelp()
 	helpflag = FALSE;
 }
 
-static void DrawHelpLine(int x, int y, char *text, char color)
+static void DrawHelpLine(CelOutputBuffer out, int x, int y, char *text, char color)
 {
 	int sx, sy, width;
 	BYTE c;
@@ -462,24 +464,24 @@ static void DrawHelpLine(int x, int y, char *text, char color)
 		width += fontkern[c] + 1;
 		if (c) {
 			if (width <= 577)
-				PrintChar(sx, sy, c, color);
+				PrintChar(out, sx, sy, c, color);
 		}
 		sx += fontkern[c] + 1;
 	}
 }
 
-void DrawHelp()
+void DrawHelp(CelOutputBuffer out)
 {
 	int i, c, w;
 	char col;
 	const char *s;
 
 	DrawSTextHelp();
-	DrawQTextBack();
+	DrawQTextBack(out);
 	if (gbIsHellfire)
-		PrintSString(0, 2, TRUE, "Hellfire Help", COL_GOLD, 0);
+		PrintSString(out, 0, 2, TRUE, "Hellfire Help", COL_GOLD, 0);
 	else
-		PrintSString(0, 2, TRUE, "Diablo Help", COL_GOLD, 0);
+		PrintSString(out, 0, 2, TRUE, "Diablo Help", COL_GOLD, 0);
 	DrawSLine(5);
 
 	s = &gszHelpText[0];
@@ -553,14 +555,14 @@ void DrawHelp()
 		}
 		if (c != 0) {
 			tempstr[c] = '\0';
-			DrawHelpLine(0, i, tempstr, col);
+			DrawHelpLine(out, 0, i, tempstr, col);
 		}
 		if (*s == '|') {
 			s++;
 		}
 	}
 
-	PrintSString(0, 23, TRUE, "Press ESC to end or the arrow keys to scroll.", COL_GOLD, 0);
+	PrintSString(out, 0, 23, TRUE, "Press ESC to end or the arrow keys to scroll.", COL_GOLD, 0);
 }
 
 void DisplayHelp()

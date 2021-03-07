@@ -272,6 +272,7 @@ add_library(devilution STATIC
   Source/trigs.cpp)
 
 set(devilutionx_SRCS
+  SourceX/qol.cpp
   SourceX/dx.cpp
   SourceX/controls/devices/game_controller.cpp
   SourceX/controls/devices/joystick.cpp
@@ -367,6 +368,7 @@ if(RUN_TESTS)
     SourceT/drlg_l4_test.cpp
     SourceT/effects_test.cpp
     SourceT/file_util_test.cpp
+    SourceT/pack_test.cpp
     SourceT/player_test.cpp
     SourceT/scrollrt_test.cpp
     SourceT/stores_test.cpp)
@@ -395,6 +397,9 @@ file(GENERATE OUTPUT ${CONFIG_PATH} CONTENT
 "#pragma once
 #define PROJECT_NAME \"${PROJECT_NAME}\"
 #define PROJECT_VERSION \"${PROJECT_VERSION}${VERSION_SUFFIX}\"
+#define PROJECT_VERSION_MAJOR ${PROJECT_VERSION_MAJOR}
+#define PROJECT_VERSION_MINOR ${PROJECT_VERSION_MINOR}
+#define PROJECT_VERSION_PATCH ${PROJECT_VERSION_PATCH}
 ")
 
 if(RUN_TESTS)
@@ -454,8 +459,8 @@ endforeach(def_name)
 # Defines with value
 foreach(
   def_name
-  SDL1_VIDEO_MODE_WIDTH
-  SDL1_VIDEO_MODE_HEIGHT
+  DEFAULT_WIDTH
+  DEFAULT_HEIGHT
   TTF_FONT_DIR
   TTF_FONT_NAME
   SDL1_VIDEO_MODE_BPP
@@ -622,7 +627,7 @@ if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   target_compile_options(devilution PUBLIC $<${DEBUG_GENEX}:-fno-omit-frame-pointer>)
 
   # Warnings for devilution
-  target_compile_options(devilution PRIVATE -Wno-multichar -Wno-int-to-pointer-cast)
+  target_compile_options(devilution PRIVATE -Wno-int-to-pointer-cast)
 
   # Warnings for devilutionX
   target_compile_options(${BIN_TARGET} PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-format-security)
@@ -686,8 +691,8 @@ if(VITA)
   set(VITA_APP_NAME "devilutionX")
   set(VITA_TITLEID  "DVLX00001")
   set(VITA_VERSION  "01.00")
-  set(VITA_MKSFOEX_FLAGS "${DOLCE_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
-  set(VITA_MKSFOEX_FLAGS "${DOLCE_MKSFOEX_FLAGS} -d ATTRIBUTE2=12")
+  set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
+  set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d ATTRIBUTE2=12")
   vita_create_self(devilutionx.self devilutionx UNSAFE)
   vita_create_vpk(devilutionx.vpk ${VITA_TITLEID} devilutionx.self
     VERSION ${VITA_VERSION}

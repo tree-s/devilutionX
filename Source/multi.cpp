@@ -22,7 +22,7 @@ BOOL gbShouldValidatePackage;
 BYTE gbActivePlayers;
 BOOLEAN gbGameDestroyed;
 BOOLEAN sgbSendDeltaTbl[MAX_PLRS];
-_gamedata sgGameInitInfo;
+GameData sgGameInitInfo;
 BOOLEAN gbSelectProvider;
 int sglTimeoutStart;
 int sgdwPlayerLeftReasonTbl[MAX_PLRS];
@@ -105,7 +105,7 @@ static BYTE *multi_recv_packet(TBuffer *pBuf, BYTE *body, DWORD *size)
 
 static void NetRecvPlrData(TPkt *pkt)
 {
-	pkt->hdr.wCheck = 'ip';
+	pkt->hdr.wCheck = LOAD_BE32("\0\0ip");
 	pkt->hdr.px = plr[myplr]._px;
 	pkt->hdr.py = plr[myplr]._py;
 	pkt->hdr.targx = plr[myplr]._ptargx;
@@ -457,7 +457,7 @@ void multi_process_network_packets()
 			continue;
 		if (dwID >= MAX_PLRS)
 			continue;
-		if (pkt->wCheck != 'ip')
+		if (pkt->wCheck != LOAD_BE32("\0\0ip"))
 			continue;
 		if (pkt->wLen != dwMsgSize)
 			continue;
@@ -522,7 +522,7 @@ void multi_send_zero_packet(int pnum, BYTE bCmd, BYTE *pbSrc, DWORD dwLen)
 	dwOffset = 0;
 
 	while (dwLen != 0) {
-		pkt.hdr.wCheck = 'ip';
+		pkt.hdr.wCheck = LOAD_BE32("\0\0ip");
 		pkt.hdr.px = 0;
 		pkt.hdr.py = 0;
 		pkt.hdr.targx = 0;
@@ -659,16 +659,17 @@ static BOOL multi_upgrade(BOOL *pfExitProgram)
 static void multi_handle_events(_SNETEVENT *pEvt)
 {
 	DWORD LeftReason;
-	_gamedata *gameData;
+	GameData *gameData;
 
 	switch (pEvt->eventid) {
-	case EVENT_TYPE_PLAYER_CREATE_GAME:
-		gameData = (_gamedata *)pEvt->data;
-		sgGameInitInfo.dwSeed = gameData->dwSeed;
-		sgGameInitInfo.bDiff = gameData->bDiff;
-		sgGameInitInfo.bRate = gameData->bRate;
+	case EVENT_TYPE_PLAYER_CREATE_GAME: {
+		GameData *gameData = (GameData *)pEvt->data;
+		if (gameData->size != sizeof(GameData))
+			app_fatal("Invalid size of game data: %d", gameData->size);
+		sgGameInitInfo = *gameData;
 		sgbPlayerTurnBitTbl[pEvt->playerid] = TRUE;
 		break;
+	}
 	case EVENT_TYPE_PLAYER_LEAVE_GAME:
 		sgbPlayerLeftGameTbl[pEvt->playerid] = TRUE;
 		sgbPlayerTurnBitTbl[pEvt->playerid] = FALSE;
@@ -728,7 +729,6 @@ void NetClose()
 
 BOOL NetInit(BOOL bSinglePlayer, BOOL *pfExitProgram)
 {
-	int i;
 	_SNETPROGRAMDATA ProgramData;
 	_SNETUIDATA UiData;
 	_SNETPLAYERDATA plrdata;
@@ -736,22 +736,22 @@ BOOL NetInit(BOOL bSinglePlayer, BOOL *pfExitProgram)
 	while (1) {
 		*pfExitProgram = FALSE;
 		SetRndSeed(0);
+		sgGameInitInfo.size = sizeof(sgGameInitInfo);
 		sgGameInitInfo.dwSeed = time(NULL);
-		sgGameInitInfo.bDiff = gnDifficulty;
-		sgGameInitInfo.bRate = ticks_per_sec;
+		sgGameInitInfo.programid = GAME_ID;
+		sgGameInitInfo.versionMajor = PROJECT_VERSION_MAJOR;
+		sgGameInitInfo.versionMinor = PROJECT_VERSION_MINOR;
+		sgGameInitInfo.versionPatch = PROJECT_VERSION_PATCH;
+		sgGameInitInfo.nDifficulty = gnDifficulty;
+		sgGameInitInfo.nTickRate = sgOptions.nTickRate;
+		sgGameInitInfo.bJogInTown = sgOptions.bJogInTown;
+		sgGameInitInfo.bTheoQuest = sgOptions.bTheoQuest;
+		sgGameInitInfo.bCowQuest = sgOptions.bCowQuest;
+		sgGameInitInfo.bFriendlyFire = sgOptions.bFriendlyFire;
 		memset(&ProgramData, 0, sizeof(ProgramData));
 		ProgramData.size = sizeof(ProgramData);
-
-		ProgramData.programname = PROJECT_NAME;
-
-		ProgramData.programdescription = gszVersionNumber;
-		ProgramData.programid = GAME_ID;
-		ProgramData.versionid = GAME_VERSION;
 		ProgramData.maxplayers = MAX_PLRS;
 		ProgramData.initdata = &sgGameInitInfo;
-		ProgramData.initdatabytes = sizeof(sgGameInitInfo);
-		ProgramData.optcategorybits = 15;
-		ProgramData.lcid = 1033; /* LANG_ENGLISH */
 		memset(&plrdata, 0, sizeof(plrdata));
 		plrdata.size = sizeof(plrdata);
 		memset(&UiData, 0, sizeof(UiData));
@@ -799,12 +799,16 @@ BOOL NetInit(BOOL bSinglePlayer, BOOL *pfExitProgram)
 		NetClose();
 		gbSelectProvider = FALSE;
 	}
-	gnDifficulty = sgGameInitInfo.bDiff;
-	ticks_per_sec = sgGameInitInfo.bRate;
-	tick_delay = 1000 / ticks_per_sec;
 	SetRndSeed(sgGameInitInfo.dwSeed);
+	gnDifficulty = sgGameInitInfo.nDifficulty;
+	gnTickRate = sgGameInitInfo.nTickRate;
+	gnTickDelay = 1000 / gnTickRate;
+	gbJogInTown = sgGameInitInfo.bJogInTown;
+	gbTheoQuest = sgGameInitInfo.bTheoQuest;
+	gbCowQuest = sgGameInitInfo.bCowQuest;
+	gbFriendlyFire = sgGameInitInfo.bFriendlyFire;
 
-	for (i = 0; i < NUMLEVELS; i++) {
+	for (int i = 0; i < NUMLEVELS; i++) {
 		glSeedTbl[i] = AdvanceRndSeed();
 		gnLevelTypeTbl[i] = InitLevelType(i);
 	}
@@ -849,8 +853,6 @@ BOOL multi_init_multi(_SNETPROGRAMDATA *client_info, _SNETPLAYERDATA *user_info,
 			    && (!first || SErrGetLastError() != STORM_ERROR_REQUIRES_UPGRADE || !multi_upgrade(pfExitProgram))) {
 				return FALSE;
 			}
-			if (type == 'BNET')
-				plr[0].pBattleNet = 1;
 		}
 
 		multi_event_handler(TRUE);
@@ -867,9 +869,6 @@ BOOL multi_init_multi(_SNETPROGRAMDATA *client_info, _SNETPLAYERDATA *user_info,
 		gbIsMultiplayer = true;
 
 		pfile_read_player_from_save();
-
-		if (type == 'BNET')
-			plr[myplr].pBattleNet = 1;
 
 		return TRUE;
 	}

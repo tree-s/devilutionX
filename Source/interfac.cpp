@@ -11,7 +11,7 @@ BYTE *sgpBackCel;
 DWORD sgdwProgress;
 int progress_id;
 
-/** The colour used for the progress bar as an index into the palette. */
+/** The color used for the progress bar as an index into the palette. */
 const BYTE BarColor[3] = { 138, 43, 254 };
 /** The screen position of the top left corner of the progress bar. */
 const int BarPos[3][2] = { { 53, 37 }, { 53, 421 }, { 53, 37 } };
@@ -247,7 +247,7 @@ static void DrawCutscene()
 	DWORD i;
 
 	lock_buf(1);
-	CelDraw(PANEL_X, 480 + SCREEN_Y - 1 + UI_OFFSET_Y, sgpBackCel, 1, 640);
+	CelDrawTo(GlobalBackBuffer(), PANEL_X, 480 + SCREEN_Y - 1 + UI_OFFSET_Y, sgpBackCel, 1, 640);
 
 	for (i = 0; i < sgdwProgress; i++) {
 		DrawProgress(

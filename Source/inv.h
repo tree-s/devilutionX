@@ -6,6 +6,8 @@
 #ifndef __INV_H__
 #define __INV_H__
 
+#include "items.h"
+
 DEVILUTION_BEGIN_NAMESPACE
 
 #ifdef __cplusplus
@@ -18,10 +20,15 @@ extern const InvXY InvRect[73];
 
 void FreeInvGFX();
 void InitInv();
-void DrawInv();
-void DrawInvBelt();
+
+/**
+ * @brief Render the inventory panel to the given buffer.
+ */
+void DrawInv(CelOutputBuffer out);
+
+void DrawInvBelt(CelOutputBuffer out);
 BOOL AutoPlace(int pnum, int ii, int sx, int sy, BOOL saveflag);
-BOOL SpecialAutoPlace(int pnum, int ii, int sx, int sy);
+BOOL SpecialAutoPlace(int pnum, int ii, const ItemStruct &item);
 BOOL GoldAutoPlace(int pnum);
 void CheckInvSwap(int pnum, BYTE bLoc, int idx, WORD wCI, int seed, BOOL bId);
 void inv_update_rem_item(int pnum, BYTE iv);

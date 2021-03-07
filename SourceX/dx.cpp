@@ -21,7 +21,6 @@ int locktbl[256];
 #endif
 static CCritSect sgMemCrit;
 
-int vsyncEnabled;
 int refreshDelay;
 SDL_Renderer *renderer;
 SDL_Texture *texture;
@@ -44,6 +43,7 @@ static void dx_create_back_buffer()
 	}
 
 	gpBuffer = (BYTE *)pal_surface->pixels;
+	gpBufEnd = gpBuffer;
 
 #ifndef USE_SDL1
 	// In SDL2, `pal_surface` points to the global `palette`.
@@ -93,7 +93,7 @@ static void lock_buf_priv()
 	}
 
 	gpBuffer = (BYTE *)pal_surface->pixels;
-	gpBufEnd += (uintptr_t)(BYTE *)pal_surface->pixels;
+	gpBufEnd = (BYTE *)pal_surface->pixels + pal_surface->pitch * pal_surface->h;
 	sgdwLockCount++;
 }
 
@@ -114,7 +114,7 @@ static void unlock_buf_priv()
 
 	sgdwLockCount--;
 	if (sgdwLockCount == 0) {
-		gpBufEnd -= (uintptr_t)gpBuffer;
+		gpBufEnd = gpBuffer;
 	}
 	sgMemCrit.Leave();
 }
@@ -152,20 +152,23 @@ void dx_cleanup()
 void dx_reinit()
 {
 #ifdef USE_SDL1
-	ghMainWnd = SDL_SetVideoMode(0, 0, 0, ghMainWnd->flags ^ SDL_FULLSCREEN);
+	Uint32 flags = ghMainWnd->flags ^ SDL_FULLSCREEN;
+	if (!IsFullScreen()) {
+		flags |= SDL_FULLSCREEN;
+	}
+	ghMainWnd = SDL_SetVideoMode(0, 0, 0, flags);
 	if (ghMainWnd == NULL) {
 		ErrSdl();
 	}
 #else
 	Uint32 flags = 0;
-	if (!fullscreen) {
+	if (!IsFullScreen()) {
 		flags = renderer ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN;
 	}
 	if (SDL_SetWindowFullscreen(ghMainWnd, flags)) {
 		ErrSdl();
 	}
 #endif
-	fullscreen = !fullscreen;
 	force_redraw = 255;
 }
 
@@ -187,8 +190,8 @@ void Blit(SDL_Surface *src, SDL_Rect *src_rect, SDL_Rect *dst_rect)
 	SDL_Surface *dst = GetOutputSurface();
 #ifndef USE_SDL1
 	if (SDL_BlitSurface(src, src_rect, dst, dst_rect) < 0)
-			ErrSdl();
-		return;
+		ErrSdl();
+	return;
 #else
 	if (!OutputRequiresScaling()) {
 		if (SDL_BlitSurface(src, src_rect, dst, dst_rect) < 0)
@@ -272,7 +275,7 @@ void RenderPresent()
 		// Clear buffer to avoid artifacts in case the window was resized
 #ifndef __vita__
 		// There's no window resizing on vita, so texture always properly overwrites display area.
-		// Thus, there's no need to clear the screen and unnecessary modify sdl render context state.
+		// Thus, there's no need to clear the screen and unnecessarily modify sdl render context state.
 		if (SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255) <= -1) { // TODO only do this if window was resized
 			ErrSdl();
 		}
@@ -286,7 +289,7 @@ void RenderPresent()
 		}
 		SDL_RenderPresent(renderer);
 
-		if (!vsyncEnabled) {
+		if (!sgOptions.bVSync) {
 			LimitFrameRate();
 		}
 	} else {

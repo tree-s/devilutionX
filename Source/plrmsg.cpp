@@ -10,7 +10,7 @@ DEVILUTION_BEGIN_NAMESPACE
 static BYTE plr_msg_slot;
 _plrmsg plr_msgs[PMSG_COUNT];
 
-/** Maps from player_num to text colour, as used in chat messages. */
+/** Maps from player_num to text color, as used in chat messages. */
 const char text_color_from_player_num[MAX_PLRS + 1] = { COL_WHITE, COL_WHITE, COL_WHITE, COL_WHITE, COL_GOLD };
 
 void plrmsg_delay(BOOL delay)
@@ -84,12 +84,12 @@ void InitPlrMsg()
 	plr_msg_slot = 0;
 }
 
-void DrawPlrMsg()
+void DrawPlrMsg(CelOutputBuffer out)
 {
 	int i;
 	DWORD x = 10 + SCREEN_X;
 	DWORD y = 70 + SCREEN_Y;
-	DWORD width = SCREEN_WIDTH - 20;
+	DWORD width = gnScreenWidth - 20;
 	_plrmsg *pMsg;
 
 	if (chrflag || questlog) {
@@ -105,13 +105,14 @@ void DrawPlrMsg()
 	pMsg = plr_msgs;
 	for (i = 0; i < PMSG_COUNT; i++) {
 		if (pMsg->str[0])
-			PrintPlrMsg(x, y, width, pMsg->str, text_color_from_player_num[pMsg->player]);
+			PrintPlrMsg(out, x, y, width, pMsg->str, text_color_from_player_num[pMsg->player]);
 		pMsg++;
 		y += 35;
 	}
 }
 
-void PrintPlrMsg(DWORD x, DWORD y, DWORD width, const char *str, BYTE col)
+// TODO: Can be made static
+void PrintPlrMsg(CelOutputBuffer out, DWORD x, DWORD y, DWORD width, const char *str, BYTE col)
 {
 	int line = 0;
 
@@ -141,7 +142,7 @@ void PrintPlrMsg(DWORD x, DWORD y, DWORD width, const char *str, BYTE col)
 			c = gbFontTransTbl[(BYTE)*str++];
 			c = fontframe[c];
 			if (c)
-				PrintChar(sx, y, c, col);
+				PrintChar(out, sx, y, c, col);
 			sx += fontkern[c] + 1;
 		}
 

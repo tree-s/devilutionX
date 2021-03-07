@@ -115,7 +115,7 @@ void FindItemOrObject()
 			if (dItem[mx + xx][my + yy] <= 0)
 				continue;
 			int i = dItem[mx + xx][my + yy] - 1;
-			if (item[i]._itype == ITYPE_NONE
+			if (item[i].isEmpty()
 			    || item[i]._iSelFlag == 0)
 				continue;
 			int newRotations = GetRotaryDistance(mx + xx, my + yy);
@@ -318,7 +318,7 @@ void CheckPlayerNearby()
 		return;
 
 	int spl = plr[myplr]._pRSpell;
-	if (FriendlyMode && spl != SPL_RESURRECT && spl != SPL_HEALOTHER)
+	if (gbFriendlyMode && spl != SPL_RESURRECT && spl != SPL_HEALOTHER)
 		return;
 
 	for (int i = 0; i < MAX_PLRS; i++) {
@@ -441,7 +441,7 @@ void Interact()
 		} else {
 			NetSendCmdParam1(true, CMD_RATTACKID, pcursmonst);
 		}
-	} else if (leveltype != DTYPE_TOWN && pcursplr != -1 && !FriendlyMode) {
+	} else if (leveltype != DTYPE_TOWN && pcursplr != -1 && !gbFriendlyMode) {
 		NetSendCmdParam1(true, plr[myplr]._pwtype == WT_RANGED ? CMD_RATTACKPID : CMD_ATTACKPID, pcursplr);
 	}
 }
@@ -988,8 +988,8 @@ void HandleRightStickMotion()
 		int x = MouseX;
 		int y = MouseY;
 		acc.pool(&x, &y, 2);
-		x = std::min(std::max(x, 0), SCREEN_WIDTH - 1);
-		y = std::min(std::max(y, 0), SCREEN_HEIGHT - 1);
+		x = std::min(std::max(x, 0), gnScreenWidth - 1);
+		y = std::min(std::max(y, 0), gnScreenHeight - 1);
 		SetCursorPos(x, y);
 	}
 }

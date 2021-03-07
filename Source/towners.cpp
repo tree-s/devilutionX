@@ -483,12 +483,12 @@ void InitTowners()
 	InitBoy();
 	InitCows();
 	if (gbIsHellfire) {
-		if (UseCowFarmer) {
+		if (gbCowQuest) {
 			InitCowFarmer();
 		} else if (quests[Q_FARMER]._qactive != 10) {
 			InitFarmer();
 		}
-		if (UseTheoQuest && plr->_pLvlVisited[17]) {
+		if (gbTheoQuest && plr->_pLvlVisited[17]) {
 			InitGirl();
 		}
 	}
@@ -750,7 +750,7 @@ void TalkToTowner(int p, int t)
 
 	towner[t]._tMsgSaid = FALSE;
 
-	if (pcurs >= CURSOR_FIRSTITEM && !DropItemBeforeTrig()) {
+	if (pcurs >= CURSOR_FIRSTITEM) {
 		return;
 	}
 

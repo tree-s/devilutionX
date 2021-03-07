@@ -55,21 +55,21 @@ static DWORD WallMask_FullyTrasparent[TILE_HEIGHT] = {
 };
 /** Transparent variant of RightMask. */
 static DWORD RightMask_Transparent[TILE_HEIGHT] = {
-	0xE0000000,
+	0xC0000000,
 	0xF0000000,
-	0xFE000000,
+	0xFC000000,
 	0xFF000000,
-	0xFFE00000,
+	0xFFC00000,
 	0xFFF00000,
-	0xFFFE0000,
+	0xFFFC0000,
 	0xFFFF0000,
-	0xFFFFE000,
+	0xFFFFC000,
 	0xFFFFF000,
-	0xFFFFFE00,
+	0xFFFFFC00,
 	0xFFFFFF00,
-	0xFFFFFFE0,
+	0xFFFFFFC0,
 	0xFFFFFFF0,
-	0xFFFFFFFE,
+	0xFFFFFFFC,
 	0xFFFFFFFF,
 	0xFFFFFFFF,
 	0xFFFFFFFF,
@@ -375,7 +375,7 @@ void foreach_set_bit(DWORD mask, const F &f)
 inline static void RenderLine(BYTE **dst, BYTE **src, int n, BYTE *tbl, DWORD mask)
 {
 #ifdef NO_OVERDRAW
-	if (*dst < gpBufStart || *dst > gpBufEnd) {
+	if (*dst < &gpBuffer[BUFFER_WIDTH * SCREEN_Y] || *dst > gpBufEnd) {
 		goto skip;
 	}
 #endif
@@ -398,7 +398,7 @@ inline static void RenderLine(BYTE **dst, BYTE **src, int n, BYTE *tbl, DWORD ma
 		assert(n != 0 && n <= sizeof(DWORD) * CHAR_BIT);
 		mask &= DWORD(-1) << ((sizeof(DWORD) * CHAR_BIT) - n);
 
-		if (sgOptions.blendedTransparancy) {     // Blended transparancy
+		if (sgOptions.bBlendedTransparancy) {    // Blended transparancy
 			if (light_table_index == lightmax) { // Complete darkness
 				for (int i = 0; i < n; i++, mask <<= 1) {
 					if (mask & 0x80000000)
@@ -464,7 +464,7 @@ RenderTile(BYTE *pBuff)
 
 	if (cel_transparency_active) {
 		if (arch_draw_type == 0) {
-			if (sgOptions.blendedTransparancy) // Use a fully transparent mask
+			if (sgOptions.bBlendedTransparancy) // Use a fully transparent mask
 				mask = &WallMask_FullyTrasparent[TILE_HEIGHT - 1];
 			else
 				mask = &WallMask[TILE_HEIGHT - 1];
@@ -472,7 +472,7 @@ RenderTile(BYTE *pBuff)
 		if (arch_draw_type == 1 && tile != RT_LTRIANGLE) {
 			c = block_lvid[level_piece_id];
 			if (c == 1 || c == 3) {
-				if (sgOptions.blendedTransparancy) // Use a fully transparent mask
+				if (sgOptions.bBlendedTransparancy) // Use a fully transparent mask
 					mask = &LeftMask_Transparent[TILE_HEIGHT - 1];
 				else
 					mask = &LeftMask[TILE_HEIGHT - 1];
@@ -481,7 +481,7 @@ RenderTile(BYTE *pBuff)
 		if (arch_draw_type == 2 && tile != RT_RTRIANGLE) {
 			c = block_lvid[level_piece_id];
 			if (c == 2 || c == 3) {
-				if (sgOptions.blendedTransparancy) // Use a fully transparent mask
+				if (sgOptions.bBlendedTransparancy) // Use a fully transparent mask
 					mask = &RightMask_Transparent[TILE_HEIGHT - 1];
 				else
 					mask = &RightMask[TILE_HEIGHT - 1];
@@ -582,7 +582,7 @@ void world_draw_black_tile(int sx, int sy)
 	int i, j;
 	BYTE *dst;
 
-	if (sx >= SCREEN_X + SCREEN_WIDTH || sy >= SCREEN_Y + VIEWPORT_HEIGHT + TILE_WIDTH / 2)
+	if (sx >= SCREEN_X + gnScreenWidth || sy >= SCREEN_Y + gnViewportHeight + TILE_WIDTH / 2)
 		return;
 
 	if (sx < SCREEN_X - (TILE_WIDTH - 4) || sy < SCREEN_Y)
@@ -598,41 +598,6 @@ void world_draw_black_tile(int sx, int sy)
 	for (i = 2, j = TILE_HEIGHT / 2 - 1; i != TILE_HEIGHT; i += 2, j--, dst -= BUFFER_WIDTH - 2) {
 		if (dst < gpBufEnd)
 			memset(dst, 0, 4 * j);
-	}
-}
-
-/**
- * Draws a half-transparent rectangle by blacking out odd pixels on odd lines,
- * even pixels on even lines.
- * @brief Render a transparent black rectangle
- * @param sx Screen coordinate
- * @param sy Screen coordinate
- * @param width Rectangle width
- * @param height Rectangle height
- */
-void trans_rect(int sx, int sy, int width, int height)
-{
-	int row, col;
-	BYTE *pix = &gpBuffer[SCREENXY(sx, sy)];
-
-	if (sgOptions.blendedTransparancy) { // Blended
-		for (row = 0; row < height; row++) {
-			for (col = 0; col < width; col++) {
-				*pix = paletteTransparencyLookup[0][*pix];
-				pix++;
-			}
-			pix += BUFFER_WIDTH - width;
-		}
-		return;
-	}
-
-	for (row = 0; row < height; row++) {
-		for (col = 0; col < width; col++) {
-			if ((row & 1 && col & 1) || (!(row & 1) && !(col & 1))) // Stippled
-				*pix = 0;
-			pix++;
-		}
-		pix += BUFFER_WIDTH - width;
 	}
 }
 

@@ -1303,7 +1303,7 @@ void PM_ChangeOffset(int pnum)
 	plr[pnum]._pVar6 += plr[pnum]._pxvel;
 	plr[pnum]._pVar7 += plr[pnum]._pyvel;
 
-	if (currlevel == 0 && jogging_opt) {
+	if (currlevel == 0 && gbJogInTown) {
 		plr[pnum]._pVar6 += plr[pnum]._pxvel;
 		plr[pnum]._pVar7 += plr[pnum]._pyvel;
 	}
@@ -1677,7 +1677,7 @@ static void PlrDeadItem(int pnum, ItemStruct *itm, int xx, int yy)
 	int x, y;
 	int i, j, k;
 
-	if (itm->_itype == ITYPE_NONE)
+	if (itm->isEmpty())
 		return;
 
 	if ((DWORD)pnum >= MAX_PLRS) {
@@ -2154,7 +2154,7 @@ bool PM_DoWalk(int pnum, int variant)
 	}
 
 	//Play walking sound effect on certain animation frames
-	if (!gbIsHellfire) {
+	if (sgOptions.bWalkingSound) {
 		if (plr[pnum]._pAnimFrame == 3
 		    || (plr[pnum]._pWFrames == 8 && plr[pnum]._pAnimFrame == 7)
 		    || (plr[pnum]._pWFrames != 8 && plr[pnum]._pAnimFrame == 4)) {
@@ -2163,7 +2163,7 @@ bool PM_DoWalk(int pnum, int variant)
 	}
 
 	//"Jog" in town which works by doubling movement speed and skipping every other animation frame
-	if (currlevel == 0 && jogging_opt) {
+	if (currlevel == 0 && gbJogInTown) {
 		if (plr[pnum]._pAnimFrame % 2 == 0) {
 			plr[pnum]._pAnimFrame++;
 			plr[pnum]._pVar8++;
@@ -2227,6 +2227,7 @@ bool PM_DoWalk(int pnum, int variant)
 			ChangeLightOff(plr[pnum]._plid, 0, 0);
 		}
 
+		AutoGoldPickup(pnum);
 		return true;
 	} else { //We didn't reach new tile so update player's "sub-tile" position
 		PM_ChangeOffset(pnum);
@@ -2236,7 +2237,7 @@ bool PM_DoWalk(int pnum, int variant)
 
 static bool WeaponDurDecay(int pnum, int ii)
 {
-	if (plr[pnum].InvBody[ii]._itype != ITYPE_NONE && plr[pnum].InvBody[ii]._iClass == ICLASS_WEAPON && plr[pnum].InvBody[ii]._iDamAcFlags & 2) {
+	if (!plr[pnum].InvBody[ii].isEmpty() && plr[pnum].InvBody[ii]._iClass == ICLASS_WEAPON && plr[pnum].InvBody[ii]._iDamAcFlags & 2) {
 		plr[pnum].InvBody[ii]._iPLDam -= 5;
 		if (plr[pnum].InvBody[ii]._iPLDam <= -100) {
 			NetSendCmdDelItem(TRUE, ii);
@@ -2268,7 +2269,7 @@ BOOL WeaponDur(int pnum, int durrnd)
 		app_fatal("WeaponDur: illegal player %d", pnum);
 	}
 
-	if (plr[pnum].InvBody[INVLOC_HAND_LEFT]._itype != ITYPE_NONE && plr[pnum].InvBody[INVLOC_HAND_LEFT]._iClass == ICLASS_WEAPON) {
+	if (!plr[pnum].InvBody[INVLOC_HAND_LEFT].isEmpty() && plr[pnum].InvBody[INVLOC_HAND_LEFT]._iClass == ICLASS_WEAPON) {
 		if (plr[pnum].InvBody[INVLOC_HAND_LEFT]._iDurability == DUR_INDESTRUCTIBLE) {
 			return FALSE;
 		}
@@ -2282,7 +2283,7 @@ BOOL WeaponDur(int pnum, int durrnd)
 		}
 	}
 
-	if (plr[pnum].InvBody[INVLOC_HAND_RIGHT]._itype != ITYPE_NONE && plr[pnum].InvBody[INVLOC_HAND_RIGHT]._iClass == ICLASS_WEAPON) {
+	if (!plr[pnum].InvBody[INVLOC_HAND_RIGHT].isEmpty() && plr[pnum].InvBody[INVLOC_HAND_RIGHT]._iClass == ICLASS_WEAPON) {
 		if (plr[pnum].InvBody[INVLOC_HAND_RIGHT]._iDurability == DUR_INDESTRUCTIBLE) {
 			return FALSE;
 		}
@@ -2296,7 +2297,7 @@ BOOL WeaponDur(int pnum, int durrnd)
 		}
 	}
 
-	if (plr[pnum].InvBody[INVLOC_HAND_LEFT]._itype == ITYPE_NONE && plr[pnum].InvBody[INVLOC_HAND_RIGHT]._itype == ITYPE_SHIELD) {
+	if (plr[pnum].InvBody[INVLOC_HAND_LEFT].isEmpty() && plr[pnum].InvBody[INVLOC_HAND_RIGHT]._itype == ITYPE_SHIELD) {
 		if (plr[pnum].InvBody[INVLOC_HAND_RIGHT]._iDurability == DUR_INDESTRUCTIBLE) {
 			return FALSE;
 		}
@@ -2310,7 +2311,7 @@ BOOL WeaponDur(int pnum, int durrnd)
 		}
 	}
 
-	if (plr[pnum].InvBody[INVLOC_HAND_RIGHT]._itype == ITYPE_NONE && plr[pnum].InvBody[INVLOC_HAND_LEFT]._itype == ITYPE_SHIELD) {
+	if (plr[pnum].InvBody[INVLOC_HAND_RIGHT].isEmpty() && plr[pnum].InvBody[INVLOC_HAND_LEFT]._itype == ITYPE_SHIELD) {
 		if (plr[pnum].InvBody[INVLOC_HAND_LEFT]._iDurability == DUR_INDESTRUCTIBLE) {
 			return FALSE;
 		}
@@ -2741,7 +2742,7 @@ BOOL PM_DoAttack(int pnum)
 				m = -(dMonster[dx][dy] + 1);
 			}
 			didhit = PlrHitMonst(pnum, m);
-		} else if (dPlayer[dx][dy] != 0 && !FriendlyMode) {
+		} else if (dPlayer[dx][dy] != 0 && (!gbFriendlyMode || gbFriendlyFire)) {
 			BYTE p = dPlayer[dx][dy];
 			if (dPlayer[dx][dy] > 0) {
 				p = dPlayer[dx][dy] - 1;
@@ -2922,15 +2923,15 @@ static void ArmorDur(int pnum)
 	}
 
 	p = &plr[pnum];
-	if (p->InvBody[INVLOC_CHEST]._itype == ITYPE_NONE && p->InvBody[INVLOC_HEAD]._itype == ITYPE_NONE) {
+	if (p->InvBody[INVLOC_CHEST].isEmpty() && p->InvBody[INVLOC_HEAD].isEmpty()) {
 		return;
 	}
 
 	a = random_(8, 3);
-	if (p->InvBody[INVLOC_CHEST]._itype != ITYPE_NONE && p->InvBody[INVLOC_HEAD]._itype == ITYPE_NONE) {
+	if (!p->InvBody[INVLOC_CHEST].isEmpty() && p->InvBody[INVLOC_HEAD].isEmpty()) {
 		a = 1;
 	}
-	if (p->InvBody[INVLOC_CHEST]._itype == ITYPE_NONE && p->InvBody[INVLOC_HEAD]._itype != ITYPE_NONE) {
+	if (p->InvBody[INVLOC_CHEST].isEmpty() && !p->InvBody[INVLOC_HEAD].isEmpty()) {
 		a = 0;
 	}
 
